@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../Connection/Connection.php';
 
+// WARNING: Seeder performs INSERTs into your database. By default the seeder is disabled
+// to avoid accidental automatic population. To run the seeder, set $RUN_SEED = true
+// below and run this script from CLI: php Seeder/Seeder.php
+$RUN_SEED = false;
+
 function seedUsers($conn) {
     $users = [
         ['username' => 'admin', 'email' => 'admin@example.com', 'password' => password_hash('adminpass', PASSWORD_DEFAULT), 'role' => 'admin', 'status' => 'aktif'],
@@ -157,13 +162,18 @@ function seedTugas($conn) {
 }
 
 // Jalankan semua seeder sesuai urutan untuk memenuhi FK
-seedUsers($conn);
-seedStok($conn);
-seedPakan($conn);
-seedTelur($conn);
-seedKandang($conn);
-seedLaporan($conn);
-seedTugas($conn);
+if ($RUN_SEED) {
+    seedUsers($conn);
+    seedStok($conn);
+    seedPakan($conn);
+    seedTelur($conn);
+    seedKandang($conn);
+    seedLaporan($conn);
+    seedTugas($conn);
+    echo "Seeding selesai.\n";
+} else {
+    echo "Seeder disabled. Set \$RUN_SEED = true in this file to run the seeder.\n";
+}
 
 $conn->close();
 

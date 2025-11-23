@@ -99,6 +99,23 @@ class KandangController
             return ['success' => false, 'message' => 'Gagal menghapus data kandang: ' . $err];
         }
     }
+
+    // Set id_telur pada kandang (saat staff menginput telur hari ini)
+    public function setTelur($id_kandang, $id_telur)
+    {
+        $stmt = $this->conn->prepare('UPDATE kandang SET id_telur = ? WHERE id_kandang = ?');
+        $stmt->bind_param('ii', $id_telur, $id_kandang);
+
+        if ($stmt->execute()) {
+            $affected = $stmt->affected_rows;
+            $stmt->close();
+            return ['success' => true, 'message' => 'Kandang diperbarui dengan id_telur', 'affected_rows' => $affected];
+        } else {
+            $err = $this->conn->error;
+            $stmt->close();
+            return ['success' => false, 'message' => 'Gagal memperbarui kandang: ' . $err];
+        }
+    }
 }
 
 ?>

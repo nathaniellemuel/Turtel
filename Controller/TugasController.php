@@ -13,7 +13,7 @@ class TugasController
     // Ambil semua tugas dengan info user dan pakan
     public function getAll()
     {
-        $sql = 'SELECT t.id_tugas, t.created_at, t.deskripsi_tugas, t.status, t.id_user, u.username, t.id_pakan, p.jumlah_digunakan FROM tugas t LEFT JOIN user u ON t.id_user = u.id_user LEFT JOIN pakan p ON t.id_pakan = p.id_pakan ORDER BY t.id_tugas DESC';
+        $sql = 'SELECT t.id_tugas, t.created_at, t.deskripsi_tugas, t.status, t.id_user, u.username, t.id_pakan, p.jumlah_digunakan, s.nama_stock AS nama_pakan FROM tugas t LEFT JOIN user u ON t.id_user = u.id_user LEFT JOIN pakan p ON t.id_pakan = p.id_pakan LEFT JOIN stok s ON p.id_stock = s.id_stock ORDER BY t.id_tugas DESC';
 
         $result = $this->conn->query($sql);
         $data = [];
@@ -30,7 +30,7 @@ class TugasController
     // Ambil tugas berdasarkan id
     public function getById($id)
     {
-        $stmt = $this->conn->prepare('SELECT t.id_tugas, t.created_at, t.deskripsi_tugas, t.status, t.id_user, u.username, t.id_pakan, p.jumlah_digunakan FROM tugas t LEFT JOIN user u ON t.id_user = u.id_user LEFT JOIN pakan p ON t.id_pakan = p.id_pakan WHERE t.id_tugas = ?');
+        $stmt = $this->conn->prepare('SELECT t.id_tugas, t.created_at, t.deskripsi_tugas, t.status, t.id_user, u.username, t.id_pakan, p.jumlah_digunakan, s.nama_stock AS nama_pakan FROM tugas t LEFT JOIN user u ON t.id_user = u.id_user LEFT JOIN pakan p ON t.id_pakan = p.id_pakan LEFT JOIN stok s ON p.id_stock = s.id_stock WHERE t.id_tugas = ?');
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -94,6 +94,23 @@ class TugasController
             $err = $this->conn->error;
             $stmt->close();
             return ['success' => false, 'message' => 'Gagal menghapus tugas: ' . $err];
+        }
+    }
+
+    // Set status saja (mis. selesai)
+    public function setStatus($id, $status)
+    {
+        $stmt = $this->conn->prepare('UPDATE tugas SET status = ? WHERE id_tugas = ?');
+        $stmt->bind_param('si', $status, $id);
+
+        if ($stmt->execute()) {
+            $affected = $stmt->affected_rows;
+            $stmt->close();
+            return ['success' => true, 'message' => 'Status tugas diperbarui', 'affected_rows' => $affected];
+        } else {
+            $err = $this->conn->error;
+            $stmt->close();
+            return ['success' => false, 'message' => 'Gagal memperbarui status tugas: ' . $err];
         }
     }
 }

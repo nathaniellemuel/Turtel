@@ -80,6 +80,18 @@ class StokController
     // Hapus stok
     public function delete($id)
     {
+        // Cek apakah stok direferensikan di tabel lain (mis. pakan)
+        $check = $this->conn->prepare('SELECT COUNT(*) AS cnt FROM pakan WHERE id_stock = ?');
+        $check->bind_param('i', $id);
+        $check->execute();
+        $res = $check->get_result();
+        $row = $res->fetch_assoc();
+        $check->close();
+
+        if (!empty($row) && intval($row['cnt']) > 0) {
+            return ['success' => false, 'message' => 'Tidak dapat menghapus stok: terdapat referensi pada tabel pakan. Hapus atau ubah referensi terlebih dahulu.'];
+        }
+
         $stmt = $this->conn->prepare('DELETE FROM stok WHERE id_stock = ?');
         $stmt->bind_param('i', $id);
 
