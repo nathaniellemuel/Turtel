@@ -33,6 +33,10 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         width: 30px;
         height: 30px;
     }
+    .nav-btn img[src*="barn-menu.png"] {
+        width: 36px;
+        height: 36px;
+    }
     .nav-btn.active {
         background-color: #F39C12;
     }
@@ -52,7 +56,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <a href="<?= BASE_URL ?>/View/pages/Admin/barn.php" class="nav-btn <?= $currentPage === 'barn.php' ? 'active' : '' ?>">
         <img src="<?= BASE_URL ?>/View/Assets/icons/barn-menu.png" alt="Barn">
     </a>
-    <a href="<?= BASE_URL ?>/View/pages/Admin/feed.php" class="nav-btn <?= $currentPage === 'feed.php' ? 'active' : '' ?>">
+    <a href="<?= BASE_URL ?>/View/pages/Admin/feedstock.php" class="nav-btn <?= $currentPage === 'feed.php' ? 'active' : '' ?>">
         <img src="<?= BASE_URL ?>/View/Assets/icons/feed-menu.png" alt="Feed">
     </a>
     <a href="<?= BASE_URL ?>/View/pages/Admin/profile.php" class="nav-btn <?= $currentPage === 'profile.php' ? 'active' : '' ?>">

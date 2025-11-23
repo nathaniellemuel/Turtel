@@ -5,6 +5,9 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../../Connection/Connection.php';
 require_once __DIR__ . '/../../../Controller/UserController.php';
+require_once __DIR__ . '/../../../Controller/PakanController.php';
+require_once __DIR__ . '/../../../Controller/KandangController.php';
+require_once __DIR__ . '/../../../Controller/TugasController.php';
 
 session_start();
 
@@ -15,7 +18,14 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 }
 
 $userCtrl = new UserController($conn);
+$pakanCtrl = new PakanController($conn);
+$kandangCtrl = new KandangController($conn);
+$tugasCtrl = new TugasController($conn);
 $username = $_SESSION['username'] ?? 'Admin';
+
+// Get pakan and kandang data for dropdowns
+$pakanList = $pakanCtrl->getAll()['data'] ?? [];
+$kandangList = $kandangCtrl->getAll()['data'] ?? [];
 
 // Handle form submissions
 $flash = '';
@@ -41,6 +51,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $flash = 'Employee updated successfully';
         } else {
             $flash = 'Failed to update employee';
+        }
+        $stmt->close();
+    } elseif ($action === 'delete_user') {
+        $userId = $_POST['user_id'] ?? 0;
+        
+        // Start transaction
+        $conn->begin_transaction();
+        
+        try {
+            // First, delete all tasks associated with this user
+            $stmt1 = $conn->prepare("DELETE FROM tugas WHERE id_user = ?");
+            $stmt1->bind_param("i", $userId);
+            $stmt1->execute();
+            $stmt1->close();
+            
+            // Then delete all laporan associated with this user
+            $stmt2 = $conn->prepare("DELETE FROM laporan WHERE id_user = ?");
+            $stmt2->bind_param("i", $userId);
+            $stmt2->execute();
+            $stmt2->close();
+            
+            // Finally, delete the user
+            $stmt3 = $conn->prepare("DELETE FROM user WHERE id_user = ? AND role = 'staff'");
+            $stmt3->bind_param("i", $userId);
+            $stmt3->execute();
+            $stmt3->close();
+            
+            // Commit transaction
+            $conn->commit();
+            $flash = 'Employee deleted successfully';
+        } catch (Exception $e) {
+            // Rollback on error
+            $conn->rollback();
+            $flash = 'Failed to delete employee: ' . $e->getMessage();
+        }
+    } elseif ($action === 'add_task') {
+        $userId = $_POST['user_id'] ?? 0;
+        $idPakan = $_POST['id_pakan'] ?? 0;
+        $idKandang = $_POST['id_kandang'] ?? 0;
+        $status = $_POST['task_status'] ?? 'proses';
+        $deskripsi = $_POST['deskripsi_tugas'] ?? 'Pemberian pakan';
+        $createdAt = date('Y-m-d H:i:s');
+        
+        // Insert task
+        $stmt = $conn->prepare("INSERT INTO tugas (created_at, deskripsi_tugas, status, id_user, id_pakan, id_kandang) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssiii", $createdAt, $deskripsi, $status, $userId, $idPakan, $idKandang);
+        if ($stmt->execute()) {
+            $flash = 'Task assigned successfully';
+        } else {
+            $flash = 'Failed to assign task';
         }
         $stmt->close();
     }
@@ -96,6 +156,18 @@ if ($usersRes) {
             color: white;
             position: relative;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .employee-card:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .employee-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            }
         }
         .employee-header {
             display: flex;
@@ -126,6 +198,16 @@ if ($usersRes) {
             width: 30px;
             height: 30px;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .edit-icon:active {
+            transform: scale(0.9) rotate(-10deg);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .edit-icon:hover {
+                transform: scale(1.2) rotate(10deg);
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            }
         }
         .employee-details {
             margin-top: 15px;
@@ -174,9 +256,19 @@ if ($usersRes) {
             cursor: pointer;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             z-index: 100;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .add-button:hover {
+        .add-button:active {
+            transform: scale(0.9) rotate(90deg);
             background-color: #8B3A3A;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .add-button:hover {
+                background-color: #8B3A3A;
+                transform: scale(1.1) rotate(90deg);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+            }
         }
         
         /* Alert Close Button */
@@ -405,6 +497,105 @@ if ($usersRes) {
             transform: translateY(-2px) !important;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
         }
+        
+        /* Delete Button in Modal */
+        .btn-delete-employee {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
+            z-index: 10;
+        }
+        .btn-delete-employee img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .btn-delete-employee:hover {
+            transform: scale(1.15);
+        }
+        
+        /* Custom Confirmation Modal */
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .confirm-overlay.active {
+            display: flex;
+        }
+        .confirm-box {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 85%;
+            max-width: 350px;
+            text-align: center;
+            animation: confirmSlideIn 0.3s ease;
+        }
+        @keyframes confirmSlideIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .confirm-box h4 {
+            color: #333;
+            margin: 0 0 15px 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        .confirm-box p {
+            color: #666;
+            margin: 0 0 25px 0;
+            font-size: 0.95rem;
+        }
+        .confirm-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .confirm-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .confirm-btn-no {
+            background-color: #E0E0E0;
+            color: #333;
+        }
+        .confirm-btn-no:hover {
+            background-color: #BDBDBD;
+        }
+        .confirm-btn-yes {
+            background-color: #E74C3C;
+            color: white;
+        }
+        .confirm-btn-yes:hover {
+            background-color: #C0392B;
+        }
     </style>
 </head>
 <body>
@@ -447,7 +638,7 @@ if ($usersRes) {
                 </div>
             </div>
             
-            <button class="tasks-button">TASKS</button>
+            <button class="tasks-button" onclick="openTaskModal(<?= $u['id_user'] ?>, '<?= htmlspecialchars($u['username'], ENT_QUOTES) ?>')">TASKS</button>
         </div>
         <?php endforeach; ?>
     </div>
@@ -514,6 +705,10 @@ if ($usersRes) {
     <!-- Edit Modal -->
     <div class="modal-overlay" id="editModal">
         <div class="modal-content">
+            <button type="button" class="btn-delete-employee" onclick="deleteEmployee()">
+                <img src="<?= BASE_URL ?>/View/Assets/icons/x.png" alt="Delete">
+            </button>
+            
             <div class="modal-header">
                 <img src="<?= BASE_URL ?>/View/Assets/icons/staff.png" alt="Staff" class="modal-avatar">
                 <div class="modal-header-info">
@@ -561,6 +756,97 @@ if ($usersRes) {
                     <button type="submit" class="btn-save">Save</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <img src="<?= BASE_URL ?>/View/Assets/icons/staff.png" alt="Staff" class="modal-avatar">
+                <div class="modal-header-info">
+                    <h5 id="taskEmployeeName">Employee Name</h5>
+                    <p>Assign Task</p>
+                </div>
+            </div>
+            
+            <form method="POST" id="taskForm">
+                <input type="hidden" name="action" value="add_task">
+                <input type="hidden" name="user_id" id="taskUserId">
+                
+                <div class="form-group">
+                    <label>Pilih Pakan</label>
+                    <input type="hidden" name="id_pakan" id="taskPakan">
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select-trigger" id="pakanTrigger">
+                            <span id="pakanSelected">Pilih pakan...</span>
+                            <div class="custom-select-arrow"></div>
+                        </div>
+                        <div class="custom-select-options" id="pakanOptions">
+                            <?php foreach ($pakanList as $pakan): ?>
+                                <div class="custom-select-option" data-value="<?= $pakan['id_pakan'] ?>">
+                                    Pakan #<?= $pakan['id_pakan'] ?> - <?= $pakan['jumlah_digunakan'] ?> unit
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Pilih Kandang</label>
+                    <input type="hidden" name="id_kandang" id="taskKandang">
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select-trigger" id="kandangTrigger">
+                            <span id="kandangSelected">Pilih kandang...</span>
+                            <div class="custom-select-arrow"></div>
+                        </div>
+                        <div class="custom-select-options" id="kandangOptions">
+                            <?php foreach ($kandangList as $kandang): ?>
+                                <div class="custom-select-option" data-value="<?= $kandang['id_kandang'] ?>">
+                                    <?= htmlspecialchars($kandang['nama_kandang']) ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Date Pemberian Tugas</label>
+                    <input type="text" value="<?= date('d/m/Y H:i') ?>" disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label>Status</label>
+                    <input type="hidden" name="task_status" id="taskStatus" value="proses">
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select-trigger" id="taskStatusTrigger">
+                            <span id="taskStatusSelected">Proses</span>
+                            <div class="custom-select-arrow"></div>
+                        </div>
+                        <div class="custom-select-options" id="taskStatusOptions">
+                            <div class="custom-select-option selected" data-value="proses">Proses</div>
+                            <div class="custom-select-option" data-value="selesai">Selesai</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closeTaskModal()">Cancel</button>
+                    <button type="submit" class="btn-save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div class="confirm-overlay" id="confirmDeleteModal">
+        <div class="confirm-box">
+            <h4>Delete Employee?</h4>
+            <p id="confirmDeleteMessage">Are you sure you want to delete this employee?</p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn confirm-btn-no" onclick="closeConfirmDelete()">No</button>
+                <button class="confirm-btn confirm-btn-yes" onclick="confirmDeleteAction()">Yes</button>
+            </div>
         </div>
     </div>
 
@@ -641,6 +927,35 @@ if ($usersRes) {
             }
         });
         
+        // Delete Employee Function
+        let pendingDeleteUserId = null;
+        
+        function deleteEmployee() {
+            const userId = document.getElementById('editUserId').value;
+            const userName = document.getElementById('modalEmployeeName').textContent;
+            
+            pendingDeleteUserId = userId;
+            document.getElementById('confirmDeleteMessage').textContent = 
+                'Are you sure you want to delete employee "' + userName + '"?';
+            document.getElementById('confirmDeleteModal').classList.add('active');
+        }
+        
+        function closeConfirmDelete() {
+            document.getElementById('confirmDeleteModal').classList.remove('active');
+            pendingDeleteUserId = null;
+        }
+        
+        function confirmDeleteAction() {
+            if (pendingDeleteUserId) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.innerHTML = '<input type="hidden" name="action" value="delete_user">' +
+                                '<input type="hidden" name="user_id" value="' + pendingDeleteUserId + '">';
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
         // Add Employee Modal Functions
         function openAddModal() {
             document.getElementById('addModal').classList.add('active');
@@ -704,6 +1019,115 @@ if ($usersRes) {
                     addStatusOptions.classList.remove('active');
                     addStatusTrigger.classList.remove('active');
                 }
+            }
+        });
+        
+        // Task Modal Functions
+        function openTaskModal(userId, username) {
+            document.getElementById('taskUserId').value = userId;
+            document.getElementById('taskEmployeeName').textContent = username;
+            document.getElementById('taskModal').classList.add('active');
+        }
+        
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('active');
+            document.getElementById('pakanOptions').classList.remove('active');
+            document.getElementById('pakanTrigger').classList.remove('active');
+            document.getElementById('kandangOptions').classList.remove('active');
+            document.getElementById('kandangTrigger').classList.remove('active');
+            document.getElementById('taskStatusOptions').classList.remove('active');
+            document.getElementById('taskStatusTrigger').classList.remove('active');
+            document.getElementById('taskForm').reset();
+        }
+        
+        // Pakan Dropdown
+        const pakanTrigger = document.getElementById('pakanTrigger');
+        const pakanOptions = document.getElementById('pakanOptions');
+        
+        pakanTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            pakanOptions.classList.toggle('active');
+            pakanTrigger.classList.toggle('active');
+        });
+        
+        document.querySelectorAll('#pakanOptions .custom-select-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.dataset.value;
+                const text = this.textContent;
+                
+                document.getElementById('taskPakan').value = value;
+                document.getElementById('pakanSelected').textContent = text;
+                
+                document.querySelectorAll('#pakanOptions .custom-select-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                pakanOptions.classList.remove('active');
+                pakanTrigger.classList.remove('active');
+            });
+        });
+        
+        // Kandang Dropdown
+        const kandangTrigger = document.getElementById('kandangTrigger');
+        const kandangOptions = document.getElementById('kandangOptions');
+        
+        kandangTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            kandangOptions.classList.toggle('active');
+            kandangTrigger.classList.toggle('active');
+        });
+        
+        document.querySelectorAll('#kandangOptions .custom-select-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.dataset.value;
+                const text = this.textContent;
+                
+                document.getElementById('taskKandang').value = value;
+                document.getElementById('kandangSelected').textContent = text;
+                
+                document.querySelectorAll('#kandangOptions .custom-select-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                kandangOptions.classList.remove('active');
+                kandangTrigger.classList.remove('active');
+            });
+        });
+        
+        // Task Status Dropdown
+        const taskStatusTrigger = document.getElementById('taskStatusTrigger');
+        const taskStatusOptions = document.getElementById('taskStatusOptions');
+        
+        taskStatusTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            taskStatusOptions.classList.toggle('active');
+            taskStatusTrigger.classList.toggle('active');
+        });
+        
+        document.querySelectorAll('#taskStatusOptions .custom-select-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.dataset.value;
+                const text = this.textContent;
+                
+                document.getElementById('taskStatus').value = value;
+                document.getElementById('taskStatusSelected').textContent = text;
+                
+                document.querySelectorAll('#taskStatusOptions .custom-select-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                taskStatusOptions.classList.remove('active');
+                taskStatusTrigger.classList.remove('active');
+            });
+        });
+        
+        // Close task modal when clicking outside
+        document.getElementById('taskModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTaskModal();
             }
         });
     </script>

@@ -47,8 +47,13 @@ class KandangController
     }
 
     // Tambah kandang
-    public function create($nama_kandang, $jenis_ayam, $jumlah_ayam, $created_at, $id_telur = null)
+    public function create($nama_kandang, $jenis_ayam, $jumlah_ayam, $id_telur = null, $created_at = null)
     {
+        // Jika created_at tidak diberikan, gunakan waktu sekarang
+        if ($created_at === null) {
+            $created_at = date('Y-m-d H:i:s');
+        }
+        
         $stmt = $this->conn->prepare('INSERT INTO kandang (nama_kandang, jenis_ayam, jumlah_ayam, created_at, id_telur) VALUES (?, ?, ?, ?, ?)');
         $stmt->bind_param('ssisi', $nama_kandang, $jenis_ayam, $jumlah_ayam, $created_at, $id_telur);
 

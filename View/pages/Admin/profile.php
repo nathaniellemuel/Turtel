@@ -67,6 +67,16 @@
         .input-wrapper-custom {
             position: relative;
             margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+        .input-wrapper-custom:active {
+            transform: scale(0.98);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .input-wrapper-custom:hover {
+                transform: translateY(-2px);
+                filter: brightness(1.05);
+            }
         }
         .input-wrapper-custom img.input-bg {
             width: 100%;
@@ -88,6 +98,15 @@
             fill: #6B4423;
             margin-right: 8px;
             flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .input-wrapper-custom:active svg {
+            transform: scale(1.1);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .input-wrapper-custom:hover svg {
+                transform: scale(1.1);
+            }
         }
         .input-wrapper-custom input {
             border: none;

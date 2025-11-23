@@ -84,6 +84,8 @@ CREATE TABLE tugas (
     status ENUM('pending', 'proses', 'selesai') NOT NULL,
     id_user INT,
     id_pakan INT,
+    id_kandang INT,
     FOREIGN KEY (id_user) REFERENCES user(id_user),
-    FOREIGN KEY (id_pakan) REFERENCES pakan(id_pakan)
+    FOREIGN KEY (id_pakan) REFERENCES pakan(id_pakan),
+    FOREIGN KEY (id_kandang) REFERENCES kandang(id_kandang)
 );
