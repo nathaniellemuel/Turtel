@@ -49,6 +49,18 @@ class KandangController
     // Tambah kandang
     public function create($nama_kandang, $jenis_ayam, $jumlah_ayam, $id_telur = null, $created_at = null)
     {
+        // Cek apakah nama kandang sudah ada
+        $stmt = $this->conn->prepare('SELECT id_kandang FROM kandang WHERE nama_kandang = ?');
+        $stmt->bind_param('s', $nama_kandang);
+        $stmt->execute();
+        $stmt->store_result();
+        
+        if ($stmt->num_rows > 0) {
+            $stmt->close();
+            return ['success' => false, 'message' => 'Nama kandang sudah digunakan'];
+        }
+        $stmt->close();
+        
         // Jika created_at tidak diberikan, gunakan waktu sekarang
         if ($created_at === null) {
             $created_at = date('Y-m-d H:i:s');

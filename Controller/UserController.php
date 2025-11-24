@@ -86,12 +86,26 @@ class UserController
     public function updateProfile($userId, $newUsername, $oldPassword = null, $newPassword = null)
     {
         // Ambil data user saat ini
-        $stmt = $this->conn->prepare('SELECT password FROM user WHERE id_user = ?');
+        $stmt = $this->conn->prepare('SELECT username, password FROM user WHERE id_user = ?');
         $stmt->bind_param('i', $userId);
         $stmt->execute();
-        $stmt->bind_result($currentHashedPassword);
+        $stmt->bind_result($currentUsername, $currentHashedPassword);
         $stmt->fetch();
         $stmt->close();
+
+        // Cek apakah username berubah dan sudah digunakan oleh user lain
+        if ($newUsername !== $currentUsername) {
+            $stmt = $this->conn->prepare('SELECT id_user FROM user WHERE username = ? AND id_user != ?');
+            $stmt->bind_param('si', $newUsername, $userId);
+            $stmt->execute();
+            $stmt->store_result();
+            
+            if ($stmt->num_rows > 0) {
+                $stmt->close();
+                return ['success' => false, 'message' => 'Username sudah digunakan oleh user lain'];
+            }
+            $stmt->close();
+        }
 
         // Jika ingin ganti password, cek password lama
         if ($oldPassword && $newPassword) {
