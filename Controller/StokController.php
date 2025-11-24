@@ -61,10 +61,10 @@ class StokController
     }
 
     // Update stok
-    public function update($id, $kategori, $nama_stock, $jumlah)
+    public function update($id, $nama_stock, $kategori, $jumlah)
     {
-        $stmt = $this->conn->prepare('UPDATE stok SET kategori = ?, nama_stock = ?, jumlah = ? WHERE id_stock = ?');
-        $stmt->bind_param('ssii', $kategori, $nama_stock, $jumlah, $id);
+        $stmt = $this->conn->prepare('UPDATE stok SET nama_stock = ?, kategori = ?, jumlah = ? WHERE id_stock = ?');
+        $stmt->bind_param('ssii', $nama_stock, $kategori, $jumlah, $id);
 
         if ($stmt->execute()) {
             $affected = $stmt->affected_rows;
@@ -74,6 +74,23 @@ class StokController
             $err = $this->conn->error;
             $stmt->close();
             return ['success' => false, 'message' => 'Gagal memperbarui stok: ' . $err];
+        }
+    }
+
+    // Update hanya jumlah stok (untuk return stock)
+    public function updateJumlah($id, $jumlah)
+    {
+        $stmt = $this->conn->prepare('UPDATE stok SET jumlah = ? WHERE id_stock = ?');
+        $stmt->bind_param('ii', $jumlah, $id);
+
+        if ($stmt->execute()) {
+            $affected = $stmt->affected_rows;
+            $stmt->close();
+            return ['success' => true, 'message' => 'Jumlah stok diperbarui', 'affected_rows' => $affected];
+        } else {
+            $err = $this->conn->error;
+            $stmt->close();
+            return ['success' => false, 'message' => 'Gagal memperbarui jumlah stok: ' . $err];
         }
     }
 
