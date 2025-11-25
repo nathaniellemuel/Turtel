@@ -13,7 +13,7 @@ class TugasController
     // Ambil semua tugas dengan info user dan pakan
     public function getAll()
     {
-        $sql = 'SELECT t.id_tugas, t.created_at, t.deskripsi_tugas, t.status, t.id_user, u.username, t.id_pakan, p.jumlah_digunakan, s.nama_stock AS nama_pakan FROM tugas t LEFT JOIN user u ON t.id_user = u.id_user LEFT JOIN pakan p ON t.id_pakan = p.id_pakan LEFT JOIN stok s ON p.id_stock = s.id_stock ORDER BY t.id_tugas DESC';
+        $sql = 'SELECT t.id_tugas, t.created_at, t.deskripsi_tugas, t.status, t.id_user, u.username, t.id_pakan, t.id_kandang, p.jumlah_digunakan, s.nama_stock AS nama_pakan, k.nama_kandang FROM tugas t LEFT JOIN user u ON t.id_user = u.id_user LEFT JOIN pakan p ON t.id_pakan = p.id_pakan LEFT JOIN stok s ON p.id_stock = s.id_stock LEFT JOIN kandang k ON t.id_kandang = k.id_kandang ORDER BY t.id_tugas DESC';
 
         $result = $this->conn->query($sql);
         $data = [];
@@ -30,7 +30,7 @@ class TugasController
     // Ambil tugas berdasarkan id
     public function getById($id)
     {
-        $stmt = $this->conn->prepare('SELECT t.id_tugas, t.created_at, t.deskripsi_tugas, t.status, t.id_user, u.username, t.id_pakan, p.jumlah_digunakan, s.nama_stock AS nama_pakan FROM tugas t LEFT JOIN user u ON t.id_user = u.id_user LEFT JOIN pakan p ON t.id_pakan = p.id_pakan LEFT JOIN stok s ON p.id_stock = s.id_stock WHERE t.id_tugas = ?');
+        $stmt = $this->conn->prepare('SELECT t.id_tugas, t.created_at, t.deskripsi_tugas, t.status, t.id_user, u.username, t.id_pakan, t.id_kandang, p.jumlah_digunakan, s.nama_stock AS nama_pakan, k.nama_kandang FROM tugas t LEFT JOIN user u ON t.id_user = u.id_user LEFT JOIN pakan p ON t.id_pakan = p.id_pakan LEFT JOIN stok s ON p.id_stock = s.id_stock LEFT JOIN kandang k ON t.id_kandang = k.id_kandang WHERE t.id_tugas = ?');
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $result = $stmt->get_result();

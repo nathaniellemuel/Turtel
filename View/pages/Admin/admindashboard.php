@@ -388,7 +388,7 @@ if ($tugasRes) {
                         <span><?= $taskDate ?></span>
                     </div>
                     <span class="task-status <?= strtolower($task['status']) ?>">
-                        <?= $task['status'] === 'selesai' ? 'Gived' : ucfirst($task['status']) ?>
+                        <?= $task['status'] === 'selesai' ? 'Completed' : ucfirst($task['status']) ?>
                     </span>
                 </div>
             </div>
