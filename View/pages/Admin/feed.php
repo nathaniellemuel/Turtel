@@ -525,6 +525,77 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
+        
+        /* Custom Select Dropdown */
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select-trigger {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 25px;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+        .custom-select-trigger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .custom-select-arrow {
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid #666;
+            transition: transform 0.3s ease;
+        }
+        .custom-select-trigger.active .custom-select-arrow {
+            transform: rotate(180deg);
+        }
+        .custom-select-options {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+            overflow: hidden;
+            max-height: 250px;
+            overflow-y: auto;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+        .custom-select-options.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .custom-select-option {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            color: #333;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+        }
+        .custom-select-option:hover {
+            background-color: #F39C12;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -599,12 +670,18 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 
                 <div class="form-group">
                     <label>Stock Name</label>
-                    <select name="id_stock" id="stockSelect" required>
-                        <option value="">Select Stock</option>
-                        <?php foreach ($stoks as $s): ?>
-                            <option value="<?= $s['id_stock'] ?>"><?= htmlspecialchars($s['nama_stock']) ?> (<?= $s['jumlah'] ?> available)</option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="custom-select-wrapper">
+                        <input type="hidden" name="id_stock" id="stockSelect" required>
+                        <div class="custom-select-trigger" data-target="stockSelect">
+                            <span class="selected-text">Select Stock</span>
+                            <div class="custom-select-arrow"></div>
+                        </div>
+                        <div class="custom-select-options">
+                            <?php foreach ($stoks as $s): ?>
+                                <div class="custom-select-option" data-value="<?= $s['id_stock'] ?>"><?= htmlspecialchars($s['nama_stock']) ?> (<?= $s['jumlah'] ?> available)</div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -614,12 +691,18 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 
                 <div class="form-group">
                     <label>For Barn</label>
-                    <select name="id_kandang" id="forBarn" required>
-                        <option value="">Select Barn</option>
-                        <?php foreach ($kandangs as $k): ?>
-                            <option value="<?= $k['id_kandang'] ?>"><?= htmlspecialchars($k['nama_kandang']) ?> (<?= $k['jenis_ayam'] ?> - <?= $k['jumlah_ayam'] ?> chickens)</option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="custom-select-wrapper">
+                        <input type="hidden" name="id_kandang" id="forBarn" required>
+                        <div class="custom-select-trigger" data-target="forBarn">
+                            <span class="selected-text">Select Barn</span>
+                            <div class="custom-select-arrow"></div>
+                        </div>
+                        <div class="custom-select-options">
+                            <?php foreach ($kandangs as $k): ?>
+                                <div class="custom-select-option" data-value="<?= $k['id_kandang'] ?>"><?= htmlspecialchars($k['nama_kandang']) ?> (<?= $k['jenis_ayam'] ?> - <?= $k['jumlah_ayam'] ?> chickens)</div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -659,12 +742,18 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 <div class="form-group">
                     <label>Barn</label>
                     <input type="hidden" name="id_kandang" id="editBarnId">
-                    <select id="editBarnSelect" required>
-                        <option value="">Select Barn</option>
-                        <?php foreach ($kandangs as $k): ?>
-                            <option value="<?= $k['id_kandang'] ?>|<?= htmlspecialchars($k['nama_kandang'], ENT_QUOTES) ?>"><?= htmlspecialchars($k['nama_kandang']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="custom-select-wrapper">
+                        <input type="hidden" id="editBarnSelect" required>
+                        <div class="custom-select-trigger" data-target="editBarnSelect">
+                            <span class="selected-text">Select Barn</span>
+                            <div class="custom-select-arrow"></div>
+                        </div>
+                        <div class="custom-select-options">
+                            <?php foreach ($kandangs as $k): ?>
+                                <div class="custom-select-option" data-value="<?= $k['id_kandang'] ?>|<?= htmlspecialchars($k['nama_kandang'], ENT_QUOTES) ?>"><?= htmlspecialchars($k['nama_kandang']) ?></div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -747,16 +836,21 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             document.getElementById('editFeedDate').value = dateReceived;
             document.getElementById('editCreatedAt').value = createdAt;
             
-            // Set barn dropdown
-            const barnSelect = document.getElementById('editBarnSelect');
-            for (let i = 0; i < barnSelect.options.length; i++) {
-                if (barnSelect.options[i].text === barn) {
-                    barnSelect.selectedIndex = i;
-                    const [barnId, barnName] = barnSelect.options[i].value.split('|');
+            // Set custom dropdown barn
+            const editWrapper = document.querySelector('#editFeedModal .custom-select-wrapper');
+            const editTrigger = editWrapper.querySelector('.custom-select-trigger .selected-text');
+            const options = editWrapper.querySelectorAll('.custom-select-option');
+            
+            // Find and set the matching barn option
+            options.forEach(opt => {
+                const optText = opt.textContent.trim();
+                if (optText === barn) {
+                    const [barnId, barnName] = opt.dataset.value.split('|');
                     document.getElementById('editBarnId').value = barnId;
-                    break;
+                    document.getElementById('editBarnSelect').value = opt.dataset.value;
+                    editTrigger.textContent = optText;
                 }
-            }
+            });
             
             document.getElementById('editFeedModal').classList.add('active');
         }
@@ -766,20 +860,62 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             document.getElementById('editFeedForm').reset();
         }
         
-        // Update hidden barn ID when dropdown changes
-        document.getElementById('editBarnSelect').addEventListener('change', function() {
-            const selectedValue = this.value;
-            if (selectedValue) {
-                const [barnId, barnName] = selectedValue.split('|');
-                document.getElementById('editBarnId').value = barnId;
-            }
-        });
-        
         // Close edit modal when clicking outside
         document.getElementById('editFeedModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeEditFeedModal();
             }
+        });
+
+        // Custom Select Dropdown
+        document.querySelectorAll('.custom-select-trigger').forEach(trigger => {
+            trigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                // Close other dropdowns
+                document.querySelectorAll('.custom-select-trigger').forEach(t => {
+                    if (t !== this) {
+                        t.classList.remove('active');
+                        t.nextElementSibling.classList.remove('active');
+                    }
+                });
+                
+                // Toggle this dropdown
+                this.classList.toggle('active');
+                this.nextElementSibling.classList.toggle('active');
+            });
+        });
+
+        document.querySelectorAll('.custom-select-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const wrapper = this.closest('.custom-select-wrapper');
+                const trigger = wrapper.querySelector('.custom-select-trigger');
+                const selectedText = trigger.querySelector('.selected-text');
+                const hiddenInput = wrapper.querySelector('input[type="hidden"]');
+                const optionsContainer = wrapper.querySelector('.custom-select-options');
+                
+                // Update selected value
+                hiddenInput.value = this.dataset.value;
+                selectedText.textContent = this.textContent;
+                
+                // For edit barn dropdown, also update editBarnId
+                if (hiddenInput.id === 'editBarnSelect') {
+                    const [barnId, barnName] = this.dataset.value.split('|');
+                    document.getElementById('editBarnId').value = barnId;
+                }
+                
+                // Close dropdown
+                trigger.classList.remove('active');
+                optionsContainer.classList.remove('active');
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.custom-select-trigger').forEach(trigger => {
+                trigger.classList.remove('active');
+                trigger.nextElementSibling.classList.remove('active');
+            });
         });
     </script>
 </body>

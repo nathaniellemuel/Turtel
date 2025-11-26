@@ -785,7 +785,7 @@ if ($usersRes) {
                         <div class="custom-select-options" id="pakanOptions">
                             <?php foreach ($pakanList as $pakan): ?>
                                 <div class="custom-select-option" data-value="<?= $pakan['id_pakan'] ?>">
-                                    Pakan #<?= $pakan['id_pakan'] ?> - <?= $pakan['jumlah_digunakan'] ?> unit
+                                    <?= htmlspecialchars($pakan['nama_stock']) ?> - <?= $pakan['jumlah_digunakan'] ?> kg
                                 </div>
                             <?php endforeach; ?>
                         </div>

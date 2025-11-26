@@ -58,11 +58,12 @@ $username = $_SESSION['username'] ?? 'Admin';
 
 // Fetch all tasks with details
 $tugasQuery = "SELECT t.id_tugas, t.created_at, t.status, t.deskripsi_tugas,
-               u.username, k.nama_kandang, p.jumlah_digunakan
+               u.username, k.nama_kandang, p.jumlah_digunakan, s.nama_stock AS nama_pakan
                FROM tugas t
                LEFT JOIN user u ON t.id_user = u.id_user
                LEFT JOIN kandang k ON t.id_kandang = k.id_kandang
                LEFT JOIN pakan p ON t.id_pakan = p.id_pakan
+               LEFT JOIN stok s ON p.id_stock = s.id_stock
                ORDER BY t.created_at DESC";
 $tugasRes = $conn->query($tugasQuery);
 $tugasList = [];
@@ -378,7 +379,7 @@ if ($tugasRes) {
                     </div>
                     <div class="task-info">
                         <h6><?= htmlspecialchars($task['username'] ?? 'Unknown') ?></h6>
-                        <p>Total : <?= htmlspecialchars($task['jumlah_digunakan'] ?? '0') ?>kg | For <?= htmlspecialchars($task['nama_kandang'] ?? 'A') ?></p>
+                        <p>Total: <?= htmlspecialchars($task['nama_pakan'] ?? 'Unknown Feed') ?> <?= htmlspecialchars($task['jumlah_digunakan'] ?? '0') ?>kg | For <?= htmlspecialchars($task['nama_kandang'] ?? 'A') ?></p>
                     </div>
                 </div>
                 

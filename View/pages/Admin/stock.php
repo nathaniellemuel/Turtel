@@ -456,6 +456,75 @@ if ($stockResult) {
         .btn-confirm-delete:hover {
             background-color: #c0392b;
         }
+        
+        /* Custom Select Dropdown */
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select-trigger {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 25px;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+        .custom-select-trigger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .custom-select-arrow {
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid #666;
+            transition: transform 0.3s ease;
+        }
+        .custom-select-trigger.active .custom-select-arrow {
+            transform: rotate(180deg);
+        }
+        .custom-select-options {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+        .custom-select-options.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .custom-select-option {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            color: #333;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+        }
+        .custom-select-option:hover {
+            background-color: #F39C12;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -526,12 +595,18 @@ if ($stockResult) {
                 
                 <div class="form-group">
                     <label>Category</label>
-                    <select name="kategori" required>
-                        <option value="">Select Category</option>
-                        <option value="pakan">Pakan</option>
-                        <option value="obat">Obat</option>
-                        <option value="vitamin">Vitamin</option>
-                    </select>
+                    <div class="custom-select-wrapper">
+                        <input type="hidden" name="kategori" id="kategori" required>
+                        <div class="custom-select-trigger" data-target="kategori">
+                            <span class="selected-text">Select Category</span>
+                            <div class="custom-select-arrow"></div>
+                        </div>
+                        <div class="custom-select-options">
+                            <div class="custom-select-option" data-value="pakan">Pakan</div>
+                            <div class="custom-select-option" data-value="obat">Obat</div>
+                            <div class="custom-select-option" data-value="vitamin">Vitamin</div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -570,12 +645,18 @@ if ($stockResult) {
                 
                 <div class="form-group">
                     <label>Category</label>
-                    <select name="kategori" id="edit_kategori" required>
-                        <option value="">Select Category</option>
-                        <option value="pakan">Pakan</option>
-                        <option value="obat">Obat</option>
-                        <option value="vitamin">Vitamin</option>
-                    </select>
+                    <div class="custom-select-wrapper">
+                        <input type="hidden" name="kategori" id="edit_kategori" required>
+                        <div class="custom-select-trigger" data-target="edit_kategori">
+                            <span class="selected-text">Select Category</span>
+                            <div class="custom-select-arrow"></div>
+                        </div>
+                        <div class="custom-select-options">
+                            <div class="custom-select-option" data-value="pakan">Pakan</div>
+                            <div class="custom-select-option" data-value="obat">Obat</div>
+                            <div class="custom-select-option" data-value="vitamin">Vitamin</div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -656,6 +737,13 @@ if ($stockResult) {
             document.getElementById('edit_nama_stock').value = nama;
             document.getElementById('edit_kategori').value = kategori;
             document.getElementById('edit_jumlah').value = jumlah;
+            
+            // Set custom dropdown selected value
+            const editWrapper = document.querySelector('#editStockModal .custom-select-wrapper');
+            const editTrigger = editWrapper.querySelector('.custom-select-trigger .selected-text');
+            const kategoriText = kategori.charAt(0).toUpperCase() + kategori.slice(1);
+            editTrigger.textContent = kategoriText;
+            
             document.getElementById('editStockModal').classList.add('active');
         }
         
@@ -701,6 +789,51 @@ if ($stockResult) {
                 if (e.target === this) {
                     this.classList.remove('active');
                 }
+            });
+        });
+
+        // Custom Select Dropdown
+        document.querySelectorAll('.custom-select-trigger').forEach(trigger => {
+            trigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                // Close other dropdowns
+                document.querySelectorAll('.custom-select-trigger').forEach(t => {
+                    if (t !== this) {
+                        t.classList.remove('active');
+                        t.nextElementSibling.classList.remove('active');
+                    }
+                });
+                
+                // Toggle this dropdown
+                this.classList.toggle('active');
+                this.nextElementSibling.classList.toggle('active');
+            });
+        });
+
+        document.querySelectorAll('.custom-select-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const wrapper = this.closest('.custom-select-wrapper');
+                const trigger = wrapper.querySelector('.custom-select-trigger');
+                const selectedText = trigger.querySelector('.selected-text');
+                const hiddenInput = wrapper.querySelector('input[type="hidden"]');
+                const optionsContainer = wrapper.querySelector('.custom-select-options');
+                
+                // Update selected value
+                hiddenInput.value = this.dataset.value;
+                selectedText.textContent = this.textContent;
+                
+                // Close dropdown
+                trigger.classList.remove('active');
+                optionsContainer.classList.remove('active');
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.custom-select-trigger').forEach(trigger => {
+                trigger.classList.remove('active');
+                trigger.nextElementSibling.classList.remove('active');
             });
         });
     </script>
