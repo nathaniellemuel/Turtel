@@ -4,6 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../../Connection/Connection.php';
+require_once __DIR__ . '/../../../Config/Language.php';
 require_once __DIR__ . '/../../../Controller/StokController.php';
 
 session_start();
@@ -80,7 +81,7 @@ if ($stockResult) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Management</title>
+    <title><?= t('stock') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -535,7 +536,7 @@ if ($stockResult) {
             </button>
         </div>
         <div class="top-bar-center">
-            <span>STOCK</span>
+            <span><?= strtoupper(t('stock')) ?></span>
         </div>
         <div class="top-bar-right">
             <img src="<?= BASE_URL ?>/View/Assets/icons/stock.png" alt="Stock Icon">

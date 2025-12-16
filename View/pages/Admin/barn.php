@@ -4,6 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../../Connection/Connection.php';
+require_once __DIR__ . '/../../../Config/Language.php';
 require_once __DIR__ . '/../../../Controller/KandangController.php';
 require_once __DIR__ . '/../../../Controller/TelurController.php';
 
@@ -54,7 +55,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barn Management</title>
+    <title><?= t('barn') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -475,7 +476,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 
     <div class="top-bar">
         <img src="<?= BASE_URL ?>/View/Assets/icons/barn.png" alt="Barn Icon">
-        <span>BARN / COOP</span>
+        <span><?= strtoupper(t('barn')) ?></span>
     </div>
 
     <div class="main-container">
@@ -495,7 +496,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 <img src="<?= BASE_URL ?>/View/Assets/icons/barn.png" alt="Barn" class="barn-icon">
                 <div class="barn-info">
                     <h5><?= htmlspecialchars($k['nama_kandang']) ?></h5>
-                    <p>Species : <?= htmlspecialchars($species) ?></p>
+                    <p><?= t('chicken_type') ?> : <?= htmlspecialchars($species) ?></p>
                 </div>
             </div>
             
@@ -512,7 +513,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 </div>
             </div>
             
-            <button type="button" class="remove-button" onclick="confirmDeleteBarn(<?= $k['id_kandang'] ?>, '<?= htmlspecialchars($k['nama_kandang'], ENT_QUOTES) ?>')">Remove</button>
+            <button type="button" class="remove-button" onclick="confirmDeleteBarn(<?= $k['id_kandang'] ?>, '<?= htmlspecialchars($k['nama_kandang'], ENT_QUOTES) ?>')"><?= t('delete') ?></button>
         </div>
         <?php endforeach; ?>
     </div>
@@ -523,46 +524,46 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
     <div class="modal-overlay" id="addBarnModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h4>ADD BARN</h4>
+                <h4><?= strtoupper(t('add_barn')) ?></h4>
             </div>
             
             <form method="POST" id="addBarnForm">
                 <input type="hidden" name="action" value="add_kandang">
                 
                 <div class="form-group">
-                    <label>Barn Name</label>
-                    <input type="text" name="nama_kandang" id="barnName" placeholder="Enter barn name" required>
+                    <label><?= t('barn_name') ?></label>
+                    <input type="text" name="nama_kandang" id="barnName" placeholder="<?= t('enter_name') ?>" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Species</label>
+                    <label><?= t('chicken_type') ?></label>
                     <input type="hidden" name="jenis_ayam" id="barnSpecies" value="negeri">
                     <div class="custom-select-wrapper">
                         <div class="custom-select-trigger" id="speciesTrigger">
-                            <span id="speciesSelected">Negeri</span>
+                            <span id="speciesSelected"><?= t('type_negeri') ?></span>
                             <div class="custom-select-arrow"></div>
                         </div>
                         <div class="custom-select-options" id="speciesOptions">
-                            <div class="custom-select-option selected" data-value="negeri">Negeri</div>
-                            <div class="custom-select-option" data-value="kampung">Kampung</div>
+                            <div class="custom-select-option selected" data-value="negeri"><?= t('type_negeri') ?></div>
+                            <div class="custom-select-option" data-value="kampung"><?= t('type_kampung') ?></div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label>Total Chicken</label>
-                    <input type="number" name="jumlah_ayam" id="totalChicken" placeholder="Enter total chicken" min="0" required>
+                    <label><?= t('chicken_count') ?></label>
+                    <input type="number" name="jumlah_ayam" id="totalChicken" placeholder="<?= t('enter_amount') ?>" min="0" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Date Received</label>
+                    <label><?= t('created_at') ?></label>
                     <input type="text" value="<?= date('d/m/Y H:i') ?>" disabled>
                     <input type="hidden" name="created_at" value="<?= date('Y-m-d H:i:s') ?>">
                 </div>
                 
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeAddBarnModal()">Cancel</button>
-                    <button type="submit" class="btn-save">Save</button>
+                    <button type="button" class="btn-cancel" onclick="closeAddBarnModal()"><?= t('cancel') ?></button>
+                    <button type="submit" class="btn-save"><?= t('save') ?></button>
                 </div>
             </form>
         </div>
@@ -572,7 +573,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
     <div class="modal-overlay" id="editBarnModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h4>EDIT BARN</h4>
+                <h4><?= strtoupper(t('edit_barn')) ?></h4>
             </div>
             
             <form method="POST" id="editBarnForm">
@@ -580,39 +581,39 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 <input type="hidden" name="id_kandang" id="editBarnId">
                 
                 <div class="form-group">
-                    <label>Barn Name</label>
+                    <label><?= t('barn_name') ?></label>
                     <input type="text" name="nama_kandang" id="editBarnName" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Species</label>
+                    <label><?= t('chicken_type') ?></label>
                     <input type="hidden" name="jenis_ayam" id="editBarnSpecies">
                     <div class="custom-select-wrapper">
                         <div class="custom-select-trigger" id="editSpeciesTrigger">
-                            <span id="editSpeciesSelected">Negeri</span>
+                            <span id="editSpeciesSelected"><?= t('type_negeri') ?></span>
                             <div class="custom-select-arrow"></div>
                         </div>
                         <div class="custom-select-options" id="editSpeciesOptions">
-                            <div class="custom-select-option" data-value="negeri">Negeri</div>
-                            <div class="custom-select-option" data-value="kampung">Kampung</div>
+                            <div class="custom-select-option" data-value="negeri"><?= t('type_negeri') ?></div>
+                            <div class="custom-select-option" data-value="kampung"><?= t('type_kampung') ?></div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label>Total Chicken</label>
+                    <label><?= t('chicken_count') ?></label>
                     <input type="number" name="jumlah_ayam" id="editTotalChicken" min="0" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Date Received</label>
+                    <label><?= t('created_at') ?></label>
                     <input type="text" id="editDateReceived" disabled>
                     <input type="hidden" name="created_at" id="editCreatedAt">
                 </div>
                 
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeEditBarnModal()">Cancel</button>
-                    <button type="submit" class="btn-save">Save</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditBarnModal()"><?= t('cancel') ?></button>
+                    <button type="submit" class="btn-save"><?= t('save') ?></button>
                 </div>
             </form>
         </div>
@@ -621,11 +622,11 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
     <!-- Custom Confirmation Modal -->
     <div class="confirm-overlay" id="confirmDeleteModal">
         <div class="confirm-box">
-            <h4>Remove Barn?</h4>
-            <p id="confirmDeleteMessage">Are you sure you want to remove this barn?</p>
+            <h4><?= t('delete_barn') ?>?</h4>
+            <p id="confirmDeleteMessage"><?= t('are_you_sure') ?></p>
             <div class="confirm-buttons">
-                <button class="confirm-btn confirm-btn-no" onclick="closeConfirmDelete()">No</button>
-                <button class="confirm-btn confirm-btn-yes" onclick="confirmDeleteAction()">Yes</button>
+                <button class="confirm-btn confirm-btn-no" onclick="closeConfirmDelete()"><?= t('no') ?></button>
+                <button class="confirm-btn confirm-btn-yes" onclick="confirmDeleteAction()"><?= t('yes') ?></button>
             </div>
         </div>
     </div>

@@ -5,6 +5,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../../Connection/Connection.php';
+require_once __DIR__ . '/../../../Config/Language.php';
 require_once __DIR__ . '/../../../Controller/UserController.php';
 require_once __DIR__ . '/../../../Controller/KandangController.php';
 require_once __DIR__ . '/../../../Controller/StokController.php';
@@ -79,7 +80,7 @@ if ($tugasRes) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title><?= t('admin_dashboard') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -335,7 +336,7 @@ if ($tugasRes) {
         <div class="info-card">
             <img src="<?= BASE_URL ?>/View/Assets/icons/barn.png" alt="Barn">
             <div class="text-content">
-                <h6>BARN / COOP</h6>
+                <h6><?= strtoupper(t('total_barns')) ?></h6>
                 <p><?= $totalKandang ?></p>
             </div>
         </div>
@@ -343,7 +344,7 @@ if ($tugasRes) {
         <div class="info-card">
             <img src="<?= BASE_URL ?>/View/Assets/icons/chicken.png" alt="Chickens">
             <div class="text-content">
-                <h6>CHICKENS</h6>
+                <h6><?= strtoupper(t('total_chickens')) ?></h6>
                 <p><?= $totalAyam ?></p>
             </div>
         </div>
@@ -351,21 +352,21 @@ if ($tugasRes) {
         <div class="info-card">
             <img src="<?= BASE_URL ?>/View/Assets/icons/stock.png" alt="Stock">
             <div class="text-content">
-                <h6>STOCK CATEGORY</h6>
+                <h6><?= strtoupper(t('stock_categories')) ?></h6>
                 <p><?= $totalKategoriStok ?></p>
             </div>
         </div>
         
         <!-- Task Progress Section -->
-        <h5 class="section-title">Task Progress</h5>
+        <h5 class="section-title"><?= t('recent_tasks') ?></h5>
         <?php if (empty($tugasList)): ?>
-            <p style="color: #999; text-align: center; padding: 20px;">No tasks assigned yet.</p>
+            <p style="color: #999; text-align: center; padding: 20px;"><?= t('no_tasks') ?></p>
         <?php else: ?>
             <?php foreach ($tugasList as $task): 
                 $taskDate = date('d/m/Y', strtotime($task['created_at']));
             ?>
             <div class="task-card">
-                <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this task?');">
+                <form method="POST" style="display: inline;" onsubmit="return confirm('<?= t('are_you_sure') ?>');">
                     <input type="hidden" name="action" value="delete_task">
                     <input type="hidden" name="task_id" value="<?= $task['id_tugas'] ?>">
                     <button type="submit" class="btn-delete-task">
@@ -379,7 +380,7 @@ if ($tugasRes) {
                     </div>
                     <div class="task-info">
                         <h6><?= htmlspecialchars($task['username'] ?? 'Unknown') ?></h6>
-                        <p>Total: <?= htmlspecialchars($task['nama_pakan'] ?? 'Unknown Feed') ?> <?= htmlspecialchars($task['jumlah_digunakan'] ?? '0') ?>kg | For <?= htmlspecialchars($task['nama_kandang'] ?? 'A') ?></p>
+                        <p><?= t('total') ?>: <?= htmlspecialchars($task['nama_pakan'] ?? 'Unknown Feed') ?> <?= htmlspecialchars($task['jumlah_digunakan'] ?? '0') ?><?= t('kg') ?> | <?= t('for_barn') ?>: <?= htmlspecialchars($task['nama_kandang'] ?? 'A') ?></p>
                     </div>
                 </div>
                 
@@ -389,7 +390,11 @@ if ($tugasRes) {
                         <span><?= $taskDate ?></span>
                     </div>
                     <span class="task-status <?= strtolower($task['status']) ?>">
-                        <?= $task['status'] === 'selesai' ? 'Completed' : ucfirst($task['status']) ?>
+                        <?php 
+                        if ($task['status'] === 'selesai') echo t('completed');
+                        elseif ($task['status'] === 'proses') echo t('in_progress');
+                        else echo t('pending');
+                        ?>
                     </span>
                 </div>
             </div>

@@ -4,6 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../../Connection/Connection.php';
+require_once __DIR__ . '/../../../Config/Language.php';
 require_once __DIR__ . '/../../../Controller/StokController.php';
 require_once __DIR__ . '/../../../Controller/PakanController.php';
 
@@ -79,7 +80,7 @@ $pakans = $pakanCtrl->getAll()['data'] ?? [];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feed & Stock</title>
+    <title><?= t('feed_stock') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -191,19 +192,19 @@ $pakans = $pakanCtrl->getAll()['data'] ?? [];
 
     <div class="top-bar">
         <img src="<?= BASE_URL ?>/View/Assets/icons/feed-stock.png" alt="Feed & Stock">
-        <span>FEED & STOCK</span>
+        <span><?= strtoupper(t('feed_stock')) ?></span>
     </div>
 
     <div class="main-container">
         <a href="<?= BASE_URL ?>/View/pages/Admin/feed.php" class="selection-card">
-            <h3>FEED</h3>
-            <p>Note : Please add stock first before using this feature. The feed is for today's supply.</p>
+            <h3><?= strtoupper(t('cat_feed')) ?></h3>
+            <p><?= t('note_feed_stock') ?></p>
             <img src="<?= BASE_URL ?>/View/Assets/icons/feed.png" alt="Feed">
         </a>
 
         <a href="<?= BASE_URL ?>/View/pages/Admin/stock.php" class="selection-card">
-            <h3>STOCK</h3>
-            <p>Note : This is the stock entry. Input your stock here.</p>
+            <h3><?= strtoupper(t('stock')) ?></h3>
+            <p><?= t('note_stock_entry') ?></p>
             <img src="<?= BASE_URL ?>/View/Assets/icons/stock.png" alt="Stock">
         </a>
     </div>

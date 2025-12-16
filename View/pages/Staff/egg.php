@@ -6,6 +6,7 @@ error_reporting(E_ALL);
 require_once __DIR__ . '/../../../Connection/Connection.php';
 require_once __DIR__ . '/../../../Controller/TelurController.php';
 require_once __DIR__ . '/../../../Controller/KandangController.php';
+require_once __DIR__ . '/../../../Config/Language.php';
 
 session_start();
 
@@ -18,7 +19,11 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'staff') {
 $telurCtrl = new TelurController($conn);
 $kandangCtrl = new KandangController($conn);
 
-$flash = '';
+// Handle flash message from session
+$flash = $_SESSION['flash'] ?? '';
+if (!empty($flash)) {
+    unset($_SESSION['flash']);
+}
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -49,9 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param('iidsi', $new_jumlah_telur, $new_jumlah_buruk, $new_berat, $layed_at, $id_telur);
             
             if ($stmt->execute()) {
-                $flash = 'Egg production added successfully!';
+                $_SESSION['flash'] = 'Egg production added successfully!';
             } else {
-                $flash = 'Failed to add egg data: ' . $stmt->error;
+                $_SESSION['flash'] = 'Failed to add egg data: ' . $stmt->error;
             }
             $stmt->close();
         } else {
@@ -60,13 +65,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param('iidsi', $jumlah_telur, $jumlah_buruk, $berat, $layed_at, $id_kandang);
             
             if ($stmt->execute()) {
-                $flash = 'Egg production added successfully!';
+                $_SESSION['flash'] = 'Egg production added successfully!';
             } else {
-                $flash = 'Failed to add egg data: ' . $stmt->error;
+                $_SESSION['flash'] = 'Failed to add egg data: ' . $stmt->error;
             }
             $stmt->close();
         }
         $checkStmt->close();
+        
+        // Redirect to prevent form resubmission
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
     } elseif ($action === 'edit_egg') {
         $id_telur = (int)($_POST['id_telur'] ?? 0);
         $jumlah_telur = (int)($_POST['jumlah_telur'] ?? 0);
@@ -78,11 +87,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param('iidsi', $jumlah_telur, $jumlah_buruk, $berat, $layed_at, $id_telur);
         
         if ($stmt->execute()) {
-            $flash = 'Egg production data updated successfully!';
+            $_SESSION['flash'] = 'Egg production data updated successfully!';
         } else {
-            $flash = 'Failed to update egg data: ' . $stmt->error;
+            $_SESSION['flash'] = 'Failed to update egg data: ' . $stmt->error;
         }
         $stmt->close();
+        
+        // Redirect to prevent form resubmission
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
     } elseif ($action === 'sell_egg') {
         $id_telur = (int)($_POST['id_telur'] ?? 0);
         $jumlah_terjual = (int)($_POST['jumlah_terjual'] ?? 0);
@@ -97,11 +110,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($result->num_rows > 0) {
             $row = $result->fetch_assoc();
-            $available = $row['jumlah_telur'];
+            $total_eggs = $row['jumlah_telur'];
             $already_sold = $row['jumlah_terjual'] ?? 0;
+            $available = $total_eggs - $already_sold; // Calculate remaining eggs
             
             if ($jumlah_terjual > $available) {
-                $flash = 'Cannot sell more eggs than available!';
+                $_SESSION['flash'] = 'Cannot sell more eggs than available! Available: ' . $available . ' eggs';
             } else {
                 $new_jumlah_terjual = $already_sold + $jumlah_terjual;
                 
@@ -109,24 +123,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param('idsi', $new_jumlah_terjual, $harga_jual, $tanggal_jual, $id_telur);
                 
                 if ($stmt->execute()) {
-                    $flash = 'Eggs sold successfully!';
+                    $_SESSION['flash'] = 'Eggs sold successfully!';
                 } else {
-                    $flash = 'Failed to sell eggs: ' . $stmt->error;
+                    $_SESSION['flash'] = 'Failed to sell eggs: ' . $stmt->error;
                 }
                 $stmt->close();
             }
         } else {
-            $flash = 'Egg data not found!';
+            $_SESSION['flash'] = 'Egg data not found!';
         }
         $checkStmt->close();
+        
+        // Redirect to prevent form resubmission
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
     }
 }
 
+// Get filter parameter
+$showHistory = isset($_GET['history']) && $_GET['history'] === 'true';
+
 // Get all kandang with egg data
-$query = "SELECT k.*, t.id_telur, t.jumlah_telur, t.jumlah_buruk, t.jumlah_terjual, t.berat, t.layed_at 
-          FROM kandang k 
-          LEFT JOIN telur t ON k.id_kandang = t.id_kandang 
-          ORDER BY k.nama_kandang";
+if ($showHistory) {
+    // Show all egg data
+    $query = "SELECT k.*, t.id_telur, t.jumlah_telur, t.jumlah_buruk, t.jumlah_terjual, t.berat, t.layed_at 
+              FROM kandang k 
+              LEFT JOIN telur t ON k.id_kandang = t.id_kandang 
+              ORDER BY t.layed_at DESC, k.nama_kandang";
+} else {
+    // Show only today's egg data
+    $today = date('Y-m-d');
+    $query = "SELECT k.*, t.id_telur, t.jumlah_telur, t.jumlah_buruk, t.jumlah_terjual, t.berat, t.layed_at 
+              FROM kandang k 
+              LEFT JOIN telur t ON k.id_kandang = t.id_kandang AND DATE(t.layed_at) = '$today'
+              ORDER BY k.nama_kandang";
+}
+
 $result = $conn->query($query);
 $kandangs = [];
 if ($result) {
@@ -198,6 +230,29 @@ if ($result) {
             font-size: 1.3rem;
             font-weight: 700;
             margin: 0;
+            margin-bottom: 2px;
+        }
+        .barn-weight {
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 0.3px;
+        }
+        .card-date {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 2;
         }
         .edit-icon {
             position: absolute;
@@ -283,6 +338,28 @@ if ($result) {
             transform: scale(1.1) rotate(90deg);
             background: #8B3A3A;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+        .history-btn {
+            position: fixed;
+            bottom: 110px;
+            left: 20px;
+            background: #FF9F1C;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(255, 159, 28, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .history-btn:hover {
+            background: #FF8C00;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 159, 28, 0.4);
         }
         .modal-overlay {
             display: none;
@@ -480,8 +557,10 @@ if ($result) {
 </head>
 <body>
     <div class="top-bar">
+        <?php if (!$showHistory): ?>
         <div class="date-badge"><?= date('d/m/y') ?></div>
-        <span>EGG PRODUCTION</span>
+        <?php endif; ?>
+        <span><?= $showHistory ? t('history') : t('egg_production') ?></span>
     </div>
 
     <div class="main-container">
@@ -500,9 +579,18 @@ if ($result) {
             $badEggs = $hasEgg ? (int)$kandang['jumlah_buruk'] : 0;
         ?>
         <div class="egg-card">
+            <?php if ($showHistory && $hasEgg): ?>
+            <div class="card-date"><?= date('d M Y', strtotime($kandang['layed_at'])) ?></div>
+            <?php endif; ?>
+            
             <div class="egg-header">
                 <img src="<?= BASE_URL ?>/View/Assets/icons/barn.png" alt="Barn" class="barn-icon">
-                <h5 class="barn-name"><?= htmlspecialchars($kandang['nama_kandang']) ?></h5>
+                <div>
+                    <h5 class="barn-name"><?= htmlspecialchars($kandang['nama_kandang']) ?></h5>
+                    <?php if ($hasEgg): ?>
+                    <p class="barn-weight">Total: <?= number_format($kandang['berat'], 1) ?>kg</p>
+                    <?php endif; ?>
+                </div>
             </div>
             
             <img src="<?= BASE_URL ?>/View/Assets/icons/pencil.png" alt="Edit" class="edit-icon" onclick="openEditModal(<?= $kandang['id_kandang'] ?>, <?= $kandang['id_telur'] ?? 0 ?>, <?= $goodEggs ?>, <?= $badEggs ?>, '<?= htmlspecialchars($kandang['layed_at'] ?? date('Y-m-d H:i:s')) ?>', <?= htmlspecialchars($kandang['berat'] ?? 0) ?>, '<?= htmlspecialchars($kandang['nama_kandang']) ?>')">
@@ -511,38 +599,44 @@ if ($result) {
                 <div class="egg-row">
                     <img src="<?= BASE_URL ?>/View/Assets/icons/eggs.png" alt="Good Eggs">
                     <span class="count"><?= $goodEggs ?></span>
-                    <span class="label good">Good</span>
+                    <span class="label good"><?= t('good') ?></span>
                 </div>
                 <div class="egg-row">
                     <img src="<?= BASE_URL ?>/View/Assets/icons/eggs_failed.png" alt="Bad Eggs">
                     <span class="count"><?= $badEggs ?></span>
-                    <span class="label bad">Bad</span>
+                    <span class="label bad"><?= t('bad') ?></span>
                 </div>
             </div>
             
-            <button type="button" class="btn-sell" onclick="openSellModal(<?= $kandang['id_telur'] ?? 0 ?>, '<?= htmlspecialchars($kandang['nama_kandang']) ?>', <?= $goodEggs ?>)" <?= !$hasEgg || $goodEggs <= 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '' ?>>SELL</button>
+            <button type="button" class="btn-sell" onclick="openSellModal(<?= $kandang['id_telur'] ?? 0 ?>, '<?= htmlspecialchars($kandang['nama_kandang']) ?>', <?= $goodEggs ?>)" <?= !$hasEgg || $goodEggs <= 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '' ?>><?= t('sell') ?></button>
         </div>
         <?php endforeach; ?>
     </div>
 
     <button class="fab-btn" onclick="openAddModal()">+</button>
+    
+    <?php if ($showHistory): ?>
+    <a href="egg.php" class="history-btn">← <?= t('today') ?></a>
+    <?php else: ?>
+    <a href="egg.php?history=true" class="history-btn">📋 <?= t('history') ?></a>
+    <?php endif; ?>
 
     <!-- Add Modal -->
     <div id="addModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h4>ADD EGG PRODUCTION</h4>
+                <h4><?= strtoupper(t('add_production')) ?></h4>
             </div>
             <form method="POST" id="addEggForm">
                 <input type="hidden" name="action" value="add_egg">
                 <input type="hidden" name="layed_at" value="<?= date('Y-m-d H:i:s') ?>">
                 
                 <div class="form-group">
-                    <label>Barn</label>
+                    <label><?= t('barn') ?></label>
                     <div class="custom-select-wrapper">
                         <input type="hidden" name="id_kandang" id="add_id_kandang" required>
                         <div class="custom-select-trigger" data-target="add_id_kandang">
-                            <span class="selected-text">Select Barn</span>
+                            <span class="selected-text"><?= t('barn') ?></span>
                             <div class="custom-select-arrow"></div>
                         </div>
                         <div class="custom-select-options">
@@ -554,28 +648,28 @@ if ($result) {
                 </div>
                 
                 <div class="form-group">
-                    <label>Good Eggs</label>
-                    <input type="number" name="jumlah_telur" id="add_jumlah_telur" placeholder="Enter good eggs" min="0" required>
+                    <label><?= t('good') ?></label>
+                    <input type="number" name="jumlah_telur" id="add_jumlah_telur" placeholder="<?= t('enter_quantity') ?>" min="0" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Bad Eggs</label>
-                    <input type="number" name="jumlah_buruk" id="add_jumlah_buruk" placeholder="Enter bad eggs" min="0" value="0" required>
+                    <label><?= t('bad') ?></label>
+                    <input type="number" name="jumlah_buruk" id="add_jumlah_buruk" placeholder="<?= t('enter_quantity') ?>" min="0" value="0" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Weight (kg)</label>
-                    <input type="number" name="berat" id="add_berat" placeholder="Enter weight" step="0.01" min="0" required>
+                    <label><?= t('weight') ?> (<?= t('kg') ?>)</label>
+                    <input type="number" name="berat" id="add_berat" placeholder="0.0" step="0.01" min="0" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Date</label>
+                    <label><?= t('date') ?></label>
                     <input type="text" value="<?= date('d/m/Y') ?>" disabled>
                 </div>
                 
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-                    <button type="submit" class="btn-save">Save</button>
+                    <button type="button" class="btn-cancel" onclick="closeAddModal()"><?= t('cancel') ?></button>
+                    <button type="submit" class="btn-save"><?= t('save') ?></button>
                 </div>
             </form>
         </div>
@@ -585,7 +679,7 @@ if ($result) {
     <div id="editModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 id="modalTitle">ADD EGG PRODUCTION</h4>
+                <h4 id="modalTitle"><?= strtoupper(t('edit_production')) ?></h4>
             </div>
             <form method="POST" id="editEggForm">
                 <input type="hidden" name="action" id="formAction" value="add_egg">
@@ -594,33 +688,33 @@ if ($result) {
                 <input type="hidden" name="layed_at" value="<?= date('Y-m-d H:i:s') ?>">
                 
                 <div class="form-group">
-                    <label>Barn</label>
+                    <label><?= t('barn') ?></label>
                     <input type="text" id="edit_barn_name" disabled>
                 </div>
                 
                 <div class="form-group">
-                    <label>Good Eggs</label>
-                    <input type="number" name="jumlah_telur" id="edit_jumlah_telur" placeholder="Enter good eggs" min="0" required>
+                    <label><?= t('good') ?></label>
+                    <input type="number" name="jumlah_telur" id="edit_jumlah_telur" placeholder="<?= t('enter_quantity') ?>" min="0" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Bad Eggs</label>
-                    <input type="number" name="jumlah_buruk" id="edit_jumlah_buruk" placeholder="Enter bad eggs" min="0" value="0" required>
+                    <label><?= t('bad') ?></label>
+                    <input type="number" name="jumlah_buruk" id="edit_jumlah_buruk" placeholder="<?= t('enter_quantity') ?>" min="0" value="0" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Weight (kg)</label>
-                    <input type="number" name="berat" id="edit_berat" placeholder="Enter weight" step="0.01" min="0" required>
+                    <label><?= t('weight') ?> (<?= t('kg') ?>)</label>
+                    <input type="number" name="berat" id="edit_berat" placeholder="0.0" step="0.01" min="0" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Date</label>
+                    <label><?= t('date') ?></label>
                     <input type="text" value="<?= date('d/m/Y') ?>" disabled>
                 </div>
                 
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
-                    <button type="submit" class="btn-save">Save</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()"><?= t('cancel') ?></button>
+                    <button type="submit" class="btn-save"><?= t('save') ?></button>
                 </div>
             </form>
         </div>
@@ -630,40 +724,40 @@ if ($result) {
     <div id="sellModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h4>SELL EGGS</h4>
+                <h4><?= strtoupper(t('sell_eggs')) ?></h4>
             </div>
             <form method="POST" id="sellEggForm">
                 <input type="hidden" name="action" value="sell_egg">
                 <input type="hidden" name="id_telur" id="sell_id_telur">
                 
                 <div class="form-group">
-                    <label>Barn</label>
+                    <label><?= t('barn') ?></label>
                     <input type="text" id="sell_barn_name" disabled>
                 </div>
                 
                 <div class="form-group">
-                    <label>Available Eggs</label>
+                    <label><?= t('available') ?></label>
                     <input type="number" id="sell_available" disabled>
                 </div>
                 
                 <div class="form-group">
-                    <label>Quantity to Sell</label>
-                    <input type="number" name="jumlah_terjual" id="sell_jumlah" placeholder="Enter quantity" min="1" required>
+                    <label><?= t('quantity_sold') ?></label>
+                    <input type="number" name="jumlah_terjual" id="sell_jumlah" placeholder="<?= t('enter_quantity') ?>" min="1" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Price per kg (Rp)</label>
-                    <input type="number" name="harga_jual" id="sell_harga" placeholder="Enter price" step="0.01" min="0" required>
+                    <label><?= t('sale_price') ?> (Rp)</label>
+                    <input type="number" name="harga_jual" id="sell_harga" placeholder="<?= t('enter_price') ?>" step="0.01" min="0" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Date</label>
+                    <label><?= t('date') ?></label>
                     <input type="text" value="<?= date('d/m/Y') ?>" disabled>
                 </div>
                 
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeSellModal()">Cancel</button>
-                    <button type="submit" class="btn-save">Sell</button>
+                    <button type="button" class="btn-cancel" onclick="closeSellModal()"><?= t('cancel') ?></button>
+                    <button type="submit" class="btn-save"><?= t('sell') ?></button>
                 </div>
             </form>
         </div>

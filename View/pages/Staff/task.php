@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../../Connection/Connection.php';
 require_once __DIR__ . '/../../../Controller/TugasController.php';
 require_once __DIR__ . '/../../../Controller/PakanController.php';
 require_once __DIR__ . '/../../../Controller/KandangController.php';
+require_once __DIR__ . '/../../../Config/Language.php';
 
 session_start();
 
@@ -20,8 +21,16 @@ $tugasCtrl = new TugasController($conn);
 $pakanCtrl = new PakanController($conn);
 $kandangCtrl = new KandangController($conn);
 
-$flash = '';
+// Handle flash message from session
+$flash = $_SESSION['flash'] ?? '';
+if (!empty($flash)) {
+    unset($_SESSION['flash']);
+}
+
 $userId = $_SESSION['user_id'] ?? null;
+
+// Get filter parameter
+$showHistory = isset($_GET['history']) && $_GET['history'] === 'true';
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -30,11 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'done_task') {
         $id_tugas = (int)($_POST['id_tugas'] ?? 0);
         $res = $tugasCtrl->setStatus($id_tugas, 'selesai');
-        $flash = $res['message'] ?? 'Task completed!';
+        $_SESSION['flash'] = $res['message'] ?? 'Task completed!';
+        header('Location: ' . $_SERVER['PHP_SELF'] . ($showHistory ? '?history=true' : ''));
+        exit;
     } elseif ($action === 'cancel_task') {
         $id_tugas = (int)($_POST['id_tugas'] ?? 0);
         $res = $tugasCtrl->setStatus($id_tugas, 'proses');
-        $flash = $res['message'] ?? 'Task status changed to in progress!';
+        $_SESSION['flash'] = $res['message'] ?? 'Task status changed to in progress!';
+        header('Location: ' . $_SERVER['PHP_SELF'] . ($showHistory ? '?history=true' : ''));
+        exit;
     }
 }
 
@@ -42,9 +55,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $userTasks = [];
 if ($userId) {
     $allTasks = $tugasCtrl->getAll()['data'] ?? [];
+    $today = date('Y-m-d');
+    
     foreach ($allTasks as $task) {
         if ((int)$task['id_user'] === (int)$userId) {
-            $userTasks[] = $task;
+            if ($showHistory) {
+                // Show all tasks
+                $userTasks[] = $task;
+            } else {
+                // Show only today's tasks
+                $taskDate = date('Y-m-d', strtotime($task['created_at']));
+                if ($taskDate === $today) {
+                    $userTasks[] = $task;
+                }
+            }
         }
     }
 }
@@ -69,11 +93,14 @@ if ($userId) {
         .top-bar {
             background: linear-gradient(135deg, #FF9F1C 0%, #FF8C00 100%);
             color: white;
-            padding: 15px 20px;
+            padding: 21px 20px;
             font-size: 1.2rem;
             font-weight: 700;
             text-align: center;
             box-shadow: 0 4px 10px rgba(255, 140, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .main-container {
             padding: 20px;
@@ -201,11 +228,51 @@ if ($userId) {
             transform: none;
             box-shadow: none;
         }
+        .history-btn {
+            position: fixed;
+            bottom: 110px;
+            left: 20px;
+            background: #FF9F1C;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(255, 159, 28, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            font-family: 'Montserrat', sans-serif;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .history-btn:hover {
+            background: #FF8C00;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 159, 28, 0.4);
+            color: white;
+        }
+        .card-date {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
     </style>
 </head>
 <body>
     <div class="top-bar">
-        YOUR JOB FOR <?= date('d/m/y') ?>
+        <?= $showHistory ? t('history') : t('your_job_for') . ' ' . date('d/m/y') ?>
     </div>
 
     <div class="main-container">
@@ -218,7 +285,7 @@ if ($userId) {
 
         <?php if (empty($userTasks)): ?>
             <div class="task-card">
-                <p style="text-align: center; margin: 20px 0;">No tasks assigned yet.</p>
+                <p style="text-align: center; margin: 20px 0;"><?= t('no_tasks') ?></p>
             </div>
         <?php else: ?>
             <?php foreach ($userTasks as $task): 
@@ -226,16 +293,20 @@ if ($userId) {
                 $isCompleted = $task['status'] === 'selesai';
                 $isProses = $task['status'] === 'proses';
                 $statusClass = $isPending ? 'status-pending' : ($isCompleted ? 'status-completed' : 'status-proses');
-                $statusText = $isPending ? 'Pending' : ($isCompleted ? 'Completed' : 'In Progress');
+                $statusText = $isPending ? t('pending') : ($isCompleted ? t('completed') : t('in_progress'));
             ?>
             <div class="task-card">
+                <?php if ($showHistory): ?>
+                <div class="card-date"><?= date('d M Y', strtotime($task['created_at'])) ?></div>
+                <?php endif; ?>
+                
                 <div class="task-header">
                     <img src="<?= BASE_URL ?>/View/Assets/icons/barn.png" alt="Barn" class="barn-icon">
                     <div class="task-info">
                         <h5><?= htmlspecialchars($task['nama_kandang'] ?? 'Unknown Barn') ?></h5>
                         <p>
                             <img src="<?= BASE_URL ?>/View/Assets/icons/chicken.png" alt="Feed" class="feed-icon">
-                            <?= htmlspecialchars($task['jumlah_digunakan'] ?? 0) ?> KG <?= htmlspecialchars($task['nama_pakan'] ?? 'Unknown Feed') ?>
+                            <?= htmlspecialchars($task['jumlah_digunakan'] ?? 0) ?> <?= t('kg') ?> <?= htmlspecialchars($task['nama_pakan'] ?? '-') ?>
                         </p>
                     </div>
                 </div>
@@ -245,8 +316,8 @@ if ($userId) {
                 <?php endif; ?>
                 
                 <div class="task-note">
-                    <p>NOTE :</p>
-                    <p><?= htmlspecialchars($task['deskripsi_tugas'] ?? 'No description') ?></p>
+                    <p><?= t('note') ?> :</p>
+                    <p><?= htmlspecialchars($task['deskripsi_tugas'] ?? '-') ?></p>
                 </div>
                 
                 <div class="task-footer">
@@ -258,13 +329,13 @@ if ($userId) {
                         <form method="POST" style="display: inline;">
                             <input type="hidden" name="action" value="cancel_task">
                             <input type="hidden" name="id_tugas" value="<?= $task['id_tugas'] ?>">
-                            <button type="submit" class="btn-cancel">CANCEL</button>
+                            <button type="submit" class="btn-cancel"><?= strtoupper(t('cancel')) ?></button>
                         </form>
                     <?php else: ?>
                         <form method="POST" style="display: inline;">
                             <input type="hidden" name="action" value="done_task">
                             <input type="hidden" name="id_tugas" value="<?= $task['id_tugas'] ?>">
-                            <button type="submit" class="btn-done">DONE</button>
+                            <button type="submit" class="btn-done"><?= strtoupper(t('mark_done')) ?></button>
                         </form>
                     <?php endif; ?>
                 </div>
@@ -272,6 +343,12 @@ if ($userId) {
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+    
+    <?php if ($showHistory): ?>
+    <a href="task.php" class="history-btn">← <?= t('today') ?></a>
+    <?php else: ?>
+    <a href="task.php?history=true" class="history-btn">📋 <?= t('history') ?></a>
+    <?php endif; ?>
 
     <?php include __DIR__ . '/../../Components/bottom-nav-staff.php'; ?>
 </body>

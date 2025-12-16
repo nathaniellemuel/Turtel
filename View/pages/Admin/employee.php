@@ -4,6 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../../Connection/Connection.php';
+require_once __DIR__ . '/../../../Config/Language.php';
 require_once __DIR__ . '/../../../Controller/UserController.php';
 require_once __DIR__ . '/../../../Controller/PakanController.php';
 require_once __DIR__ . '/../../../Controller/KandangController.php';
@@ -121,7 +122,7 @@ if ($usersRes) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Management</title>
+    <title><?= t('employee') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -602,7 +603,7 @@ if ($usersRes) {
 
     <div class="top-bar">
         <img src="<?= BASE_URL ?>/View/Assets/icons/staff.png" alt="Employee Icon">
-        <span>Employee</span>
+        <span><?= strtoupper(t('employee')) ?></span>
     </div>
 
     <div class="main-container">
@@ -638,7 +639,7 @@ if ($usersRes) {
                 </div>
             </div>
             
-            <button class="tasks-button" onclick="openTaskModal(<?= $u['id_user'] ?>, '<?= htmlspecialchars($u['username'], ENT_QUOTES) ?>')">TASKS</button>
+            <button class="tasks-button" onclick="openTaskModal(<?= $u['id_user'] ?>, '<?= htmlspecialchars($u['username'], ENT_QUOTES) ?>')"><?= strtoupper(t('task')) ?>S</button>
         </div>
         <?php endforeach; ?>
     </div>
@@ -651,8 +652,8 @@ if ($usersRes) {
             <div class="modal-header">
                 <img src="<?= BASE_URL ?>/View/Assets/icons/staff.png" alt="Staff" class="modal-avatar">
                 <div class="modal-header-info">
-                    <h5>Add employee</h5>
-                    <p>Position : Peternak</p>
+                    <h5><?= t('add_employee') ?></h5>
+                    <p><?= t('role') ?> : <?= t('staff') ?></p>
                 </div>
             </div>
             
@@ -660,43 +661,43 @@ if ($usersRes) {
                 <input type="hidden" name="action" value="add_user">
                 
                 <div class="form-group">
-                    <label>Name of employee</label>
+                    <label><?= t('username') ?></label>
                     <input type="text" name="username" id="addEmployeeName" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Email</label>
+                    <label><?= t('email') ?></label>
                     <input type="email" name="email" id="addEmail" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Position</label>
-                    <input type="text" value="Staff" disabled>
+                    <label><?= t('role') ?></label>
+                    <input type="text" value="<?= t('staff') ?>" disabled>
                 </div>
                 
                 <div class="form-group">
-                    <label>Employment start date</label>
+                    <label><?= t('created_at') ?></label>
                     <input type="text" id="addEmploymentDate" value="<?= date('d/m/Y') ?>" disabled>
                 </div>
                 
                 <div class="form-group">
-                    <label>Status</label>
+                    <label><?= t('status') ?></label>
                     <input type="hidden" name="status" id="addStatus" value="aktif">
                     <div class="custom-select-wrapper">
                         <div class="custom-select-trigger" id="addStatusTrigger">
-                            <span id="addStatusSelected">Aktif</span>
+                            <span id="addStatusSelected"><?= t('active') ?></span>
                             <div class="custom-select-arrow"></div>
                         </div>
                         <div class="custom-select-options" id="addStatusOptions">
-                            <div class="custom-select-option selected" data-value="aktif">Aktif</div>
-                            <div class="custom-select-option" data-value="nonaktif">Nonaktif</div>
+                            <div class="custom-select-option selected" data-value="aktif"><?= t('active') ?></div>
+                            <div class="custom-select-option" data-value="nonaktif"><?= t('inactive') ?></div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-                    <button type="submit" class="btn-save">Save</button>
+                    <button type="button" class="btn-cancel" onclick="closeAddModal()"><?= t('cancel') ?></button>
+                    <button type="submit" class="btn-save"><?= t('save') ?></button>
                 </div>
             </form>
         </div>
@@ -713,7 +714,7 @@ if ($usersRes) {
                 <img src="<?= BASE_URL ?>/View/Assets/icons/staff.png" alt="Staff" class="modal-avatar">
                 <div class="modal-header-info">
                     <h5 id="modalEmployeeName">Employee Name</h5>
-                    <p>Position : Peternak</p>
+                    <p><?= t('role') ?> : <?= t('staff') ?></p>
                 </div>
             </div>
             
@@ -722,38 +723,38 @@ if ($usersRes) {
                 <input type="hidden" name="user_id" id="editUserId">
                 
                 <div class="form-group">
-                    <label>Name of employee</label>
+                    <label><?= t('username') ?></label>
                     <input type="text" name="employee_name" id="editEmployeeName" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Position</label>
-                    <input type="text" value="Staff" disabled>
+                    <label><?= t('role') ?></label>
+                    <input type="text" value="<?= t('staff') ?>" disabled>
                 </div>
                 
                 <div class="form-group">
-                    <label>Employment start date</label>
+                    <label><?= t('created_at') ?></label>
                     <input type="text" id="editEmploymentDate" disabled>
                 </div>
                 
                 <div class="form-group">
-                    <label>Status</label>
+                    <label><?= t('status') ?></label>
                     <input type="hidden" name="status" id="editStatus">
                     <div class="custom-select-wrapper">
                         <div class="custom-select-trigger" id="statusTrigger">
-                            <span id="statusSelected">Aktif</span>
+                            <span id="statusSelected"><?= t('active') ?></span>
                             <div class="custom-select-arrow"></div>
                         </div>
                         <div class="custom-select-options" id="statusOptions">
-                            <div class="custom-select-option selected" data-value="aktif">Aktif</div>
-                            <div class="custom-select-option" data-value="nonaktif">Nonaktif</div>
+                            <div class="custom-select-option selected" data-value="aktif"><?= t('active') ?></div>
+                            <div class="custom-select-option" data-value="nonaktif"><?= t('inactive') ?></div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
-                    <button type="submit" class="btn-save">Save</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()"><?= t('cancel') ?></button>
+                    <button type="submit" class="btn-save"><?= t('save') ?></button>
                 </div>
             </form>
         </div>
@@ -766,7 +767,7 @@ if ($usersRes) {
                 <img src="<?= BASE_URL ?>/View/Assets/icons/staff.png" alt="Staff" class="modal-avatar">
                 <div class="modal-header-info">
                     <h5 id="taskEmployeeName">Employee Name</h5>
-                    <p>Assign Task</p>
+                    <p><?= t('assign_task') ?></p>
                 </div>
             </div>
             
@@ -775,17 +776,17 @@ if ($usersRes) {
                 <input type="hidden" name="user_id" id="taskUserId">
                 
                 <div class="form-group">
-                    <label>Pilih Pakan</label>
+                    <label><?= t('feed_type') ?></label>
                     <input type="hidden" name="id_pakan" id="taskPakan">
                     <div class="custom-select-wrapper">
                         <div class="custom-select-trigger" id="pakanTrigger">
-                            <span id="pakanSelected">Pilih pakan...</span>
+                            <span id="pakanSelected"><?= t('select_stock') ?>...</span>
                             <div class="custom-select-arrow"></div>
                         </div>
                         <div class="custom-select-options" id="pakanOptions">
                             <?php foreach ($pakanList as $pakan): ?>
                                 <div class="custom-select-option" data-value="<?= $pakan['id_pakan'] ?>">
-                                    <?= htmlspecialchars($pakan['nama_stock']) ?> - <?= $pakan['jumlah_digunakan'] ?> kg
+                                    <?= htmlspecialchars($pakan['nama_stock']) ?> - <?= $pakan['jumlah_digunakan'] ?> <?= t('kg') ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -793,11 +794,11 @@ if ($usersRes) {
                 </div>
                 
                 <div class="form-group">
-                    <label>Pilih Kandang</label>
+                    <label><?= t('barn') ?></label>
                     <input type="hidden" name="id_kandang" id="taskKandang">
                     <div class="custom-select-wrapper">
                         <div class="custom-select-trigger" id="kandangTrigger">
-                            <span id="kandangSelected">Pilih kandang...</span>
+                            <span id="kandangSelected"><?= t('select_barn') ?>...</span>
                             <div class="custom-select-arrow"></div>
                         </div>
                         <div class="custom-select-options" id="kandangOptions">
@@ -811,28 +812,28 @@ if ($usersRes) {
                 </div>
                 
                 <div class="form-group">
-                    <label>Date Pemberian Tugas</label>
+                    <label><?= t('created_at') ?></label>
                     <input type="text" value="<?= date('d/m/Y H:i') ?>" disabled>
                 </div>
                 
                 <div class="form-group">
-                    <label>Status</label>
+                    <label><?= t('status') ?></label>
                     <input type="hidden" name="task_status" id="taskStatus" value="proses">
                     <div class="custom-select-wrapper">
                         <div class="custom-select-trigger" id="taskStatusTrigger">
-                            <span id="taskStatusSelected">Proses</span>
+                            <span id="taskStatusSelected"><?= t('in_progress') ?></span>
                             <div class="custom-select-arrow"></div>
                         </div>
                         <div class="custom-select-options" id="taskStatusOptions">
-                            <div class="custom-select-option selected" data-value="proses">Proses</div>
-                            <div class="custom-select-option" data-value="selesai">Selesai</div>
+                            <div class="custom-select-option selected" data-value="proses"><?= t('in_progress') ?></div>
+                            <div class="custom-select-option" data-value="selesai"><?= t('completed') ?></div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeTaskModal()">Cancel</button>
-                    <button type="submit" class="btn-save">Save</button>
+                    <button type="button" class="btn-cancel" onclick="closeTaskModal()"><?= t('cancel') ?></button>
+                    <button type="submit" class="btn-save"><?= t('save') ?></button>
                 </div>
             </form>
         </div>
@@ -841,11 +842,11 @@ if ($usersRes) {
     <!-- Custom Confirmation Modal -->
     <div class="confirm-overlay" id="confirmDeleteModal">
         <div class="confirm-box">
-            <h4>Delete Employee?</h4>
-            <p id="confirmDeleteMessage">Are you sure you want to delete this employee?</p>
+            <h4><?= t('delete') ?> <?= t('employee') ?>?</h4>
+            <p id="confirmDeleteMessage"><?= t('are_you_sure') ?></p>
             <div class="confirm-buttons">
-                <button class="confirm-btn confirm-btn-no" onclick="closeConfirmDelete()">No</button>
-                <button class="confirm-btn confirm-btn-yes" onclick="confirmDeleteAction()">Yes</button>
+                <button class="confirm-btn confirm-btn-no" onclick="closeConfirmDelete()"><?= t('no') ?></button>
+                <button class="confirm-btn confirm-btn-yes" onclick="confirmDeleteAction()"><?= t('yes') ?></button>
             </div>
         </div>
     </div>

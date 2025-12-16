@@ -4,6 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../../Connection/Connection.php';
+require_once __DIR__ . '/../../../Config/Language.php';
 require_once __DIR__ . '/../../../Controller/PakanController.php';
 require_once __DIR__ . '/../../../Controller/StokController.php';
 require_once __DIR__ . '/../../../Controller/KandangController.php';
@@ -148,7 +149,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feed Management</title>
+    <title><?= t('cat_feed') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -607,7 +608,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             </button>
         </div>
         <div class="top-bar-center">
-            <span>FEED</span>
+            <span><?= strtoupper(t('cat_feed')) ?></span>
         </div>
         <div class="top-bar-right">
             <img src="<?= BASE_URL ?>/View/Assets/icons/feed.png" alt="Feed Icon">

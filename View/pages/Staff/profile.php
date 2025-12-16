@@ -2,6 +2,7 @@
     session_start();
     require_once __DIR__ . '/../../../Connection/Connection.php';
     require_once __DIR__ . '/../../../Controller/UserController.php';
+    require_once __DIR__ . '/../../../Config/Language.php';
 
     // Simple access control: only allow staff
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'staff') {
@@ -9,7 +10,14 @@
         exit;
     }
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Language handling
+    if (isset($_POST['change_language'])) {
+        $_SESSION['language'] = $_POST['language'];
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['change_language'])) {
         $userController = new UserController($conn);
         $userId = $_SESSION['user_id'];
         $newUsername = $_POST['username'] ?? '';
@@ -34,11 +42,11 @@
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= getLang() === 'id' ? 'id' : 'en' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile</title>
+    <title><?= t('profile') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/style.css">
     <link rel="shortcut icon" href="<?= BASE_URL ?>/View/Assets/icons/logo-background.png" type="image/x-icon">
@@ -156,6 +164,45 @@
         .btn-logout:hover {
             background-color: #8B4513;
         }
+        .language-selector {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .language-selector label {
+            display: block;
+            font-size: 0.75rem;
+            color: #763A12;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .language-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .language-btns button {
+            background: white;
+            border: 2px solid #763A12;
+            color: #763A12;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+        .language-btns button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(118, 58, 18, 0.2);
+        }
+        .language-btns button.active {
+            background: linear-gradient(135deg, #763A12 0%, #AA4C0A 100%);
+            color: white;
+            border-color: #763A12;
+        }
     </style>
 </head>
 <body>
@@ -167,7 +214,7 @@
             echo '<script>
                 Swal.fire({
                     icon: "error",
-                    title: "Failed",
+                    title: "' . t('failed') . '",
                     text: "' . htmlspecialchars($message, ENT_QUOTES) . '",
                     showConfirmButton: true,
                     timer: 3000
@@ -178,8 +225,8 @@
             echo '<script>
                 Swal.fire({
                     icon: "warning",
-                    title: "Not Logged In",
-                    text: "Silakan login untuk mengakses fitur ini.",
+                    title: "' . t('not_logged_in') . '",
+                    text: "' . t('please_login') . '",
                     showConfirmButton: true
                 }).then(() => {
                     window.location.href = "../auth/index.php";
@@ -193,6 +240,16 @@
         <img src="<?= BASE_URL ?>/View/Assets/icons/profile1.png" alt="Profile">
     </div>
 
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <label><?= t('language') ?></label>
+        <form method="POST" class="language-btns">
+            <input type="hidden" name="change_language" value="1">
+            <button type="submit" name="language" value="en" class="<?= getLang() === 'en' ? 'active' : '' ?>">English</button>
+            <button type="submit" name="language" value="id" class="<?= getLang() === 'id' ? 'active' : '' ?>">Indonesia</button>
+        </form>
+    </div>
+
     <!-- Profile Form -->
     <form method="POST">
         <div class="row g-2">
@@ -203,7 +260,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                         </svg>
-                        <input type="text" name="username" placeholder="Jhoe" value="<?= htmlspecialchars($_SESSION['username'] ?? '', ENT_QUOTES) ?>" required />
+                        <input type="text" name="username" placeholder="<?= t('username') ?>" value="<?= htmlspecialchars($_SESSION['username'] ?? '', ENT_QUOTES) ?>" required />
                     </div>
                 </div>
             </div>
@@ -215,7 +272,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                             <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
                         </svg>
-                        <input type="password" name="old_password" placeholder="Oldest password" />
+                        <input type="password" name="old_password" placeholder="<?= t('old_password') ?>" />
                     </div>
                 </div>
             </div>
@@ -227,7 +284,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                             <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                         </svg>
-                        <input type="email" name="email" placeholder="Email" value="<?= htmlspecialchars($_SESSION['email'] ?? '', ENT_QUOTES) ?>" disabled />
+                        <input type="email" name="email" placeholder="<?= t('email') ?>" value="<?= htmlspecialchars($_SESSION['email'] ?? '', ENT_QUOTES) ?>" disabled />
                     </div>
                 </div>
             </div>
@@ -239,13 +296,13 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                             <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
                         </svg>
-                        <input type="password" name="new_password" placeholder="News password" />
+                        <input type="password" name="new_password" placeholder="<?= t('new_password') ?>" />
                     </div>
                 </div>
             </div>
 
             <div class="col-12 mt-2">
-                <button type="submit" class="btn-save">Save Changes</button>
+                <button type="submit" class="btn-save"><?= t('save_changes') ?></button>
             </div>
         </div>
     </form>
@@ -255,7 +312,7 @@
 <!-- Logout Button (Fixed Position) -->
 <div class="logout-container">
     <form method="POST" action="<?= BASE_URL ?>/Controller/Logout.php">
-        <button type="submit" class="btn-logout">Logout</button>
+        <button type="submit" class="btn-logout"><?= t('logout') ?></button>
     </form>
 
 

@@ -9,6 +9,7 @@ require_once __DIR__ . '/../../../Connection/Connection.php';
 require_once __DIR__ . '/../../../Controller/TugasController.php';
 require_once __DIR__ . '/../../../Controller/TelurController.php';
 require_once __DIR__ . '/../../../Controller/KandangController.php';
+require_once __DIR__ . '/../../../Config/Language.php';
 
 session_start();
 
@@ -79,7 +80,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Staff Dashboard</title>
+	<title><?= t('staff_dashboard') ?></title>
 	<link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
 	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 	<style>
@@ -242,9 +243,9 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 			<div class="avatar-circle">
 				<img src="<?= BASE_URL ?>/View/Assets/icons/staff.png" alt="Staff Avatar">
 			</div>
-			<div class="welcome-text">Welcome, <?= htmlspecialchars($_SESSION['username'] ?? 'Staff') ?>!</div>
+			<div class="welcome-text"><?= t('welcome') ?>, <?= htmlspecialchars($_SESSION['username'] ?? 'Staff') ?>!</div>
 			<div class="contribution-badge">
-				Your contribution on <?= date('d/m/y') ?>
+				<?= t('your_contribution_on') ?> <?= date('d/m/y') ?>
 			</div>
 		</div>
 
@@ -254,9 +255,9 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 					<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
 				</svg>
-				Total Kontribusi
+				<?= t('total_contribution') ?>
 			</div>
-			<div class="stats-subtitle">Data diperoleh selama 7 hari terakhir</div>
+			<div class="stats-subtitle"><?= t('data_last_7_days') ?></div>
 			
 			<!-- Chart -->
 			<div class="chart-wrapper">
@@ -270,15 +271,15 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 				<div class="chart-container">
 					<div class="chart-bar">
 						<div class="bar" style="height: 25%;"></div>
-						<div class="bar-label">Senin</div>
+						<div class="bar-label"><?= t('monday') ?></div>
 					</div>
 					<div class="chart-bar">
 						<div class="bar" style="height: 45%;"></div>
-						<div class="bar-label">Selasa</div>
+						<div class="bar-label"><?= t('tuesday') ?></div>
 					</div>
 					<div class="chart-bar">
 						<div class="bar" style="height: 80%;"></div>
-						<div class="bar-label">Rabu</div>
+						<div class="bar-label"><?= t('wednesday') ?></div>
 					</div>
 				</div>
 			</div>
