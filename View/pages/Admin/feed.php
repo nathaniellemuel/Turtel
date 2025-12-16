@@ -488,6 +488,56 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             color: #666;
             cursor: not-allowed;
         }
+        
+        /* Custom Date Input Styling */
+        .form-group input[type="date"] {
+            cursor: pointer;
+            position: relative;
+            font-weight: 600;
+        }
+        .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(360deg) brightness(95%) contrast(97%);
+            transition: all 0.3s ease;
+        }
+        .form-group input[type="date"]:hover::-webkit-calendar-picker-indicator {
+            transform: scale(1.1);
+            filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(360deg) brightness(105%) contrast(97%) drop-shadow(0 2px 4px rgba(243, 156, 18, 0.6));
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+            padding: 0;
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-text {
+            color: #666;
+            padding: 0 0.3em;
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-month-field,
+        .form-group input[type="date"]::-webkit-datetime-edit-day-field,
+        .form-group input[type="date"]::-webkit-datetime-edit-year-field {
+            color: #333;
+            font-weight: 600;
+            padding: 4px 6px;
+            margin: 0 2px;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-month-field:hover,
+        .form-group input[type="date"]::-webkit-datetime-edit-day-field:hover,
+        .form-group input[type="date"]::-webkit-datetime-edit-year-field:hover {
+            background-color: rgba(243, 156, 18, 0.2);
+            transform: scale(1.05);
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-month-field:focus,
+        .form-group input[type="date"]::-webkit-datetime-edit-day-field:focus,
+        .form-group input[type="date"]::-webkit-datetime-edit-year-field:focus {
+            background-color: #F39C12;
+            color: white;
+            outline: none;
+            border-radius: 8px;
+            transform: scale(1.08);
+            box-shadow: 0 2px 8px rgba(243, 156, 18, 0.4);
+        }
+        
         .modal-buttons {
             display: flex;
             justify-content: space-between;
@@ -708,7 +758,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 
                 <div class="form-group">
                     <label>Date</label>
-                    <input type="text" value="<?= date('d/m/Y') ?>" disabled>
+                    <input type="date" name="created_at" id="addFeedDate" value="<?= date('Y-m-d') ?>" required>
                 </div>
                 
                 <div class="modal-buttons">
@@ -759,8 +809,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 
                 <div class="form-group">
                     <label>Date Received</label>
-                    <input type="text" id="editFeedDate" disabled>
-                    <input type="hidden" name="created_at" id="editCreatedAt">
+                    <input type="date" name="created_at" id="editCreatedAt" required>
                 </div>
                 
                 <div class="modal-buttons">
@@ -829,13 +878,32 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             }
         });
         
+        // Convert date to MySQL format before submit (Add Feed)
+        document.getElementById('addFeedForm').addEventListener('submit', function(e) {
+            const dateInput = document.getElementById('addFeedDate');
+            if (dateInput.value) {
+                const dateValue = dateInput.value + ' 00:00:00';
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'created_at';
+                hiddenInput.value = dateValue;
+                this.appendChild(hiddenInput);
+                dateInput.removeAttribute('name');
+            }
+        });
+        
         // Edit Feed Modal Functions
         function openEditFeedModal(feedId, feedName, totalKg, barn, dateReceived, createdAt) {
             document.getElementById('editFeedId').value = feedId;
             document.getElementById('editFeedName').value = feedName;
             document.getElementById('editTotalKg').value = totalKg;
-            document.getElementById('editFeedDate').value = dateReceived;
-            document.getElementById('editCreatedAt').value = createdAt;
+            
+            // Convert from dd/mm/yyyy to YYYY-MM-DD for date input
+            const dateParts = dateReceived.split('/');
+            if (dateParts.length === 3) {
+                const formattedDate = dateParts[2] + '-' + dateParts[1] + '-' + dateParts[0];
+                document.getElementById('editCreatedAt').value = formattedDate;
+            }
             
             // Set custom dropdown barn
             const editWrapper = document.querySelector('#editFeedModal .custom-select-wrapper');
@@ -865,6 +933,20 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
         document.getElementById('editFeedModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeEditFeedModal();
+            }
+        });
+        
+        // Convert date to MySQL format before submit (Edit Feed)
+        document.getElementById('editFeedForm').addEventListener('submit', function(e) {
+            const dateInput = document.getElementById('editCreatedAt');
+            if (dateInput.value) {
+                const dateValue = dateInput.value + ' 00:00:00';
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'created_at';
+                hiddenInput.value = dateValue;
+                this.appendChild(hiddenInput);
+                dateInput.removeAttribute('name');
             }
         });
 

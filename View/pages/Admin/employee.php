@@ -26,6 +26,19 @@ $username = $_SESSION['username'] ?? 'Admin';
 
 // Get pakan and kandang data for dropdowns
 $pakanList = $pakanCtrl->getAll()['data'] ?? [];
+// Filter out pakan that is already assigned to a task
+$assignedPakanIds = [];
+$assignedRes = $conn->query("SELECT id_pakan FROM tugas WHERE id_pakan IS NOT NULL");
+if ($assignedRes) {
+    while ($row = $assignedRes->fetch_assoc()) {
+        $assignedPakanIds[] = $row['id_pakan'];
+    }
+}
+$pakanList = array_filter($pakanList, function($p) use ($assignedPakanIds) {
+    return !in_array($p['id_pakan'], $assignedPakanIds);
+});
+// Re-index array for foreach
+$pakanList = array_values($pakanList);
 $kandangList = $kandangCtrl->getAll()['data'] ?? [];
 
 // Handle form submissions
@@ -93,7 +106,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $idKandang = $_POST['id_kandang'] ?? 0;
         $status = $_POST['task_status'] ?? 'proses';
         $deskripsi = $_POST['deskripsi_tugas'] ?? 'Pemberian pakan';
-        $createdAt = date('Y-m-d H:i:s');
+        $createdAt = $_POST['created_at'] ?? date('Y-m-d H:i:s');
+        // If only date (Y-m-d) is provided, append time
+        if (strlen($createdAt) === 10) {
+            $createdAt .= ' 00:00:00';
+        }
         
         // Insert task
         $stmt = $conn->prepare("INSERT INTO tugas (created_at, deskripsi_tugas, status, id_user, id_pakan, id_kandang) VALUES (?, ?, ?, ?, ?, ?)");
@@ -813,8 +830,9 @@ if ($usersRes) {
                 
                 <div class="form-group">
                     <label><?= t('created_at') ?></label>
-                    <input type="text" value="<?= date('d/m/Y H:i') ?>" disabled>
+                    <input type="date" name="created_at" id="addTaskDate" value="<?= date('Y-m-d') ?>" required>
                 </div>
+                        
                 
                 <div class="form-group">
                     <label><?= t('status') ?></label>

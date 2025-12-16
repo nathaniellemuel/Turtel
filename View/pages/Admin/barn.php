@@ -41,8 +41,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $flash = $res['message'] ?? 'Updated';
     } elseif ($action === 'delete_kandang') {
         $id = $_POST['id_kandang'] ?? 0;
-        $res = $kandangCtrl->delete((int)$id);
-        $flash = $res['message'] ?? 'Deleted';
+        
+        // Check if kandang is used in tugas (tasks)
+        $checkTugas = $conn->prepare("SELECT id_tugas FROM tugas WHERE id_kandang = ?");
+        $checkTugas->bind_param("i", $id);
+        $checkTugas->execute();
+        $checkTugas->store_result();
+        
+        if ($checkTugas->num_rows > 0) {
+            $checkTugas->close();
+            $flash = 'Kandang tidak bisa dihapus karena masih ada tugas yang menggunakan kandang ini';
+        } else {
+            $checkTugas->close();
+            
+            // Check if kandang has telur (eggs) linked
+            $kandangData = $kandangCtrl->getById((int)$id);
+            if ($kandangData['success'] && !empty($kandangData['data']['id_telur'])) {
+                $flash = 'Kandang tidak bisa dihapus karena masih memiliki data produksi telur';
+            } else {
+                // Safe to delete
+                $res = $kandangCtrl->delete((int)$id);
+                $flash = $res['message'] ?? 'Deleted';
+            }
+        }
     }
 }
 
@@ -358,6 +379,56 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             color: #666;
             cursor: not-allowed;
         }
+        
+        /* Custom Date Input Styling */
+        .form-group input[type="date"] {
+            cursor: pointer;
+            position: relative;
+            font-weight: 600;
+        }
+        .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(360deg) brightness(95%) contrast(97%);
+            transition: all 0.3s ease;
+        }
+        .form-group input[type="date"]:hover::-webkit-calendar-picker-indicator {
+            transform: scale(1.1);
+            filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(360deg) brightness(105%) contrast(97%) drop-shadow(0 2px 4px rgba(243, 156, 18, 0.6));
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+            padding: 0;
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-text {
+            color: #666;
+            padding: 0 0.3em;
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-month-field,
+        .form-group input[type="date"]::-webkit-datetime-edit-day-field,
+        .form-group input[type="date"]::-webkit-datetime-edit-year-field {
+            color: #333;
+            font-weight: 600;
+            padding: 4px 6px;
+            margin: 0 2px;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-month-field:hover,
+        .form-group input[type="date"]::-webkit-datetime-edit-day-field:hover,
+        .form-group input[type="date"]::-webkit-datetime-edit-year-field:hover {
+            background-color: rgba(243, 156, 18, 0.2);
+            transform: scale(1.05);
+        }
+        .form-group input[type="date"]::-webkit-datetime-edit-month-field:focus,
+        .form-group input[type="date"]::-webkit-datetime-edit-day-field:focus,
+        .form-group input[type="date"]::-webkit-datetime-edit-year-field:focus {
+            background-color: #F39C12;
+            color: white;
+            outline: none;
+            border-radius: 8px;
+            transform: scale(1.08);
+            box-shadow: 0 2px 8px rgba(243, 156, 18, 0.4);
+        }
+        
         .custom-select-wrapper {
             position: relative;
         }
@@ -557,8 +628,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 
                 <div class="form-group">
                     <label><?= t('created_at') ?></label>
-                    <input type="text" value="<?= date('d/m/Y H:i') ?>" disabled>
-                    <input type="hidden" name="created_at" value="<?= date('Y-m-d H:i:s') ?>">
+                    <input type="date" name="created_at" id="addCreatedAt" value="<?= date('Y-m-d') ?>" required>
                 </div>
                 
                 <div class="modal-buttons">
@@ -607,8 +677,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 
                 <div class="form-group">
                     <label><?= t('created_at') ?></label>
-                    <input type="text" id="editDateReceived" disabled>
-                    <input type="hidden" name="created_at" id="editCreatedAt">
+                    <input type="date" name="created_at" id="editCreatedAt" required>
                 </div>
                 
                 <div class="modal-buttons">
@@ -725,18 +794,31 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             }
         });
         
+        // Convert date to MySQL format before submit (Add Barn)
+        document.getElementById('addBarnForm').addEventListener('submit', function(e) {
+            const dateInput = document.getElementById('addCreatedAt');
+            if (dateInput.value) {
+                const dateValue = dateInput.value + ' 00:00:00';
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'created_at';
+                hiddenInput.value = dateValue;
+                this.appendChild(hiddenInput);
+                dateInput.removeAttribute('name');
+            }
+        });
+        
         // Edit Barn Modal Functions
         function openEditBarnModal(barnId, barnName, species, totalChicken, dateReceived) {
             document.getElementById('editBarnId').value = barnId;
             document.getElementById('editBarnName').value = barnName;
             document.getElementById('editBarnSpecies').value = species;
             document.getElementById('editTotalChicken').value = totalChicken;
-            document.getElementById('editDateReceived').value = dateReceived;
             
-            // Convert date from dd/mm/yyyy to Y-m-d H:i:s format for hidden input
+            // Convert date from dd/mm/yyyy to YYYY-MM-DD format for date input
             const dateParts = dateReceived.split('/');
             if (dateParts.length === 3) {
-                const formattedDate = dateParts[2] + '-' + dateParts[1] + '-' + dateParts[0] + ' 00:00:00';
+                const formattedDate = dateParts[2] + '-' + dateParts[1] + '-' + dateParts[0];
                 document.getElementById('editCreatedAt').value = formattedDate;
             }
             
@@ -761,6 +843,25 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             document.getElementById('editSpeciesOptions').classList.remove('active');
             document.getElementById('editSpeciesTrigger').classList.remove('active');
         }
+        
+        // Convert date to MySQL format before submit
+        document.getElementById('editBarnForm').addEventListener('submit', function(e) {
+            const dateInput = document.getElementById('editCreatedAt');
+            if (dateInput.value) {
+                // Convert from "YYYY-MM-DD" to "YYYY-MM-DD 00:00:00"
+                const dateValue = dateInput.value + ' 00:00:00';
+                
+                // Create hidden input with converted value
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'created_at';
+                hiddenInput.value = dateValue;
+                this.appendChild(hiddenInput);
+                
+                // Remove name from date input to prevent it from being submitted
+                dateInput.removeAttribute('name');
+            }
+        });
         
         // Custom Dropdown for Edit Species
         const editSpeciesTrigger = document.getElementById('editSpeciesTrigger');
