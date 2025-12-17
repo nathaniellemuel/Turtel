@@ -22,6 +22,13 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     .navbar-bottom .nav-link img {
         filter: brightness(0) invert(1);
     }
+    
+    /* Hide bottom nav on desktop */
+    @media (min-width: 768px) {
+        .navbar-bottom {
+            display: none !important;
+        }
+    }
 </style>
 
 <!-- Bottom Navigation Bar -->

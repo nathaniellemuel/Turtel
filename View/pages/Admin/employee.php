@@ -141,6 +141,7 @@ if ($usersRes) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= t('employee') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/desktop-layout.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -155,16 +156,51 @@ if ($usersRes) {
             padding: 15px 20px;
             font-size: 1.2rem;
             font-weight: bold;
+            display: grid;
+            grid-template-columns: 1fr 50px;
+            align-items: center;
+            gap: 10px;
+        }
+        .top-bar-left {
             display: flex;
             align-items: center;
+            justify-content: flex-start;
         }
-        .top-bar img {
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .top-bar-right img {
             width: 40px;
             height: 40px;
-            margin-right: 15px;
+            object-fit: contain;
         }
         .main-container {
             padding: 20px;
+        }
+        
+        /* Desktop Layout */
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 0;
+            }
+            
+            .top-bar {
+                margin-left: 200px;
+            }
+            
+            .main-container {
+                margin-left: 200px;
+                padding: 30px;
+            }
+            
+            .desktop-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 20px;
+            }
         }
         .employee-card {
             background: linear-gradient(135deg, #6B2C2C 0%, #4A1F1F 100%);
@@ -617,13 +653,22 @@ if ($usersRes) {
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../../Components/sidebar-admin.php'; ?>
 
     <div class="top-bar">
-        <img src="<?= BASE_URL ?>/View/Assets/icons/staff.png" alt="Employee Icon">
-        <span><?= strtoupper(t('employee')) ?></span>
+        <div class="top-bar-left">
+            <span><?= strtoupper(t('employee')) ?></span>
+        </div>
+        <div class="top-bar-right">
+            <div class="time-badge">
+                <span id="currentTime"><?= date('H:i') ?></span>
+            </div>
+            <img src="<?= BASE_URL ?>/View/Assets/icons/staff.png" alt="Employee Icon">
+        </div>
     </div>
 
     <div class="main-container">
+        <div class="desktop-grid">
         <?php if (!empty($flash)): ?>
             <div class="alert alert-info alert-dismissible fade show" role="alert" style="position: relative; padding-right: 40px;">
                 <?= htmlspecialchars($flash) ?>
@@ -659,6 +704,7 @@ if ($usersRes) {
             <button class="tasks-button" onclick="openTaskModal(<?= $u['id_user'] ?>, '<?= htmlspecialchars($u['username'], ENT_QUOTES) ?>')"><?= strtoupper(t('task')) ?>S</button>
         </div>
         <?php endforeach; ?>
+        </div>
     </div>
 
     <button class="add-button" onclick="openAddModal()">+</button>
@@ -1149,6 +1195,18 @@ if ($usersRes) {
                 closeTaskModal();
             }
         });
+    </script>
+    
+    <script>
+        // Update time display
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('currentTime').textContent = `${hours}:${minutes}`;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>

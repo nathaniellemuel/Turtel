@@ -1,0 +1,78 @@
+/* Desktop Layout Helpers */
+@media (min-width: 768px) {
+    body {
+        padding-bottom: 0 !important;
+    }
+    
+    .top-bar {
+        margin-left: 200px;
+    }
+    
+    .main-container {
+        margin-left: 200px;
+        padding: 30px;
+    }
+    
+    /* Grid layouts for cards */
+    .desktop-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    
+    .desktop-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    
+    .desktop-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+}
+
+/* Enhanced Top Bar for Desktop */
+.top-bar-enhanced {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.top-bar-left {
+    display: flex;
+    align-items: center;
+}
+
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.time-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Card Enhancements */
+.card-enhanced {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.card-enhanced:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+/* Mobile - hide time badge */
+@media (max-width: 767px) {
+    .time-badge {
+        display: none;
+    }
+}

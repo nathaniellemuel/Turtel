@@ -49,6 +49,7 @@
     <title><?= t('profile') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/desktop-layout.css">
     <link rel="shortcut icon" href="<?= BASE_URL ?>/View/Assets/icons/logo-background.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -58,6 +59,12 @@
             margin: 0;
             padding-bottom: 90px;
             font-family: 'Montserrat', sans-serif;
+        }
+        @media (min-width: 768px) {
+            body {
+                margin-left: 200px;
+                padding-bottom: 20px;
+            }
         }
         .profile-container {
             max-width: 500px;
@@ -206,6 +213,8 @@
     </style>
 </head>
 <body>
+<?php include __DIR__ . '/../../Components/sidebar-admin.php'; ?>
+
 <div class="profile-container">
     <?php
         $success = $success ?? false;

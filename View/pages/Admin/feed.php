@@ -151,6 +151,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= t('cat_feed') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/desktop-layout.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -165,8 +166,8 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             padding: 15px 20px;
             font-size: 1.2rem;
             font-weight: bold;
-            display: grid;
-            grid-template-columns: 40px 1fr 50px;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
             gap: 10px;
         }
@@ -174,6 +175,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             display: flex;
             align-items: center;
             justify-content: flex-start;
+            flex: 1;
         }
         .top-bar-center {
             text-align: center;
@@ -199,6 +201,10 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             display: flex;
             align-items: center;
             justify-content: flex-end;
+            gap: 10px;
+        }
+        .top-bar-right .time-badge {
+            display: none;
         }
         .top-bar-right img {
             width: 40px;
@@ -207,6 +213,32 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
         }
         .main-container {
             padding: 20px;
+        }
+        
+        /* Desktop Layout */
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 0;
+            }
+            
+            .top-bar {
+                margin-left: 200px;
+            }
+            
+            .top-bar-right .time-badge {
+                display: block;
+            }
+            
+            .main-container {
+                margin-left: 200px;
+                padding: 30px;
+            }
+            
+            .desktop-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 20px;
+            }
         }
         .feed-card {
             background: linear-gradient(135deg, #6B2C2C 0%, #4A1F1F 100%);
@@ -650,17 +682,16 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../../Components/sidebar-admin.php'; ?>
 
     <div class="top-bar">
         <div class="top-bar-left">
-            <button class="back-button" onclick="window.history.back()">
-                <img src="<?= BASE_URL ?>/View/Assets/icons/back.png" alt="Back">
-            </button>
-        </div>
-        <div class="top-bar-center">
             <span><?= strtoupper(t('cat_feed')) ?></span>
         </div>
         <div class="top-bar-right">
+            <div class="time-badge">
+                <span id="currentTime"><?= date('H:i') ?> WIB</span>
+            </div>
             <img src="<?= BASE_URL ?>/View/Assets/icons/feed.png" alt="Feed Icon">
         </div>
     </div>
@@ -673,6 +704,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             </div>
         <?php endif; ?>
 
+        <div class="desktop-grid">
         <?php foreach ($pakans as $p): 
             $feedDate = date('d/m/Y', strtotime($p['created_at']));
             $stockName = $p['nama_stock'] ?? 'Unknown';
@@ -705,6 +737,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             </div>
         </div>
         <?php endforeach; ?>
+        </div>
     </div>
 
     <button class="add-button" onclick="openAddFeedModal()">+</button>

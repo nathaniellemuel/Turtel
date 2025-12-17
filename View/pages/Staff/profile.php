@@ -59,6 +59,13 @@
             padding-bottom: 90px;
             font-family: 'Montserrat', sans-serif;
         }
+        
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 20px;
+            }
+        }
+        
         .profile-container {
             max-width: 500px;
             margin: 0 auto;
@@ -206,6 +213,8 @@
     </style>
 </head>
 <body>
+<?php include __DIR__ . '/../../Components/sidebar-staff.php'; ?>
+
 <div class="profile-container">
     <?php
         $success = $success ?? false;

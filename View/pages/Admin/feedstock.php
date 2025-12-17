@@ -82,6 +82,7 @@ $pakans = $pakanCtrl->getAll()['data'] ?? [];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= t('feed_stock') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/desktop-layout.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -89,6 +90,19 @@ $pakans = $pakanCtrl->getAll()['data'] ?? [];
             font-family: 'Montserrat', sans-serif;
             padding-bottom: 90px;
             margin: 0;
+        }
+        @media (min-width: 768px) {
+            body {
+                margin-left: 200px;
+                padding-bottom: 20px;
+            }
+            .main-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
         }
         .top-bar {
             background-color: #F39C12;
@@ -98,6 +112,12 @@ $pakans = $pakanCtrl->getAll()['data'] ?? [];
             font-weight: bold;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+        }
+        @media (min-width: 768px) {
+            .top-bar {
+                display: none;
+            }
         }
         .top-bar img {
             width: 40px;
@@ -189,10 +209,14 @@ $pakans = $pakanCtrl->getAll()['data'] ?? [];
     </style>
 </head>
 <body>
+<?php include __DIR__ . '/../../Components/sidebar-admin.php'; ?>
 
     <div class="top-bar">
-        <img src="<?= BASE_URL ?>/View/Assets/icons/feed-stock.png" alt="Feed & Stock">
-        <span><?= strtoupper(t('feed_stock')) ?></span>
+        <div class="d-flex align-items-center gap-2">
+            <img src="<?= BASE_URL ?>/View/Assets/icons/feed.png" alt="Feed" style="width: 40px; height: 40px;" onerror="this.src='<?= BASE_URL ?>/View/Assets/icons/logo-background.png'">
+            <span class="fw-semibold"><?= strtoupper(t('cat_feed')) ?></span>
+        </div>
+        <span class="time-badge" id="currentTime"></span>
     </div>
 
     <div class="main-container">
@@ -212,5 +236,16 @@ $pakans = $pakanCtrl->getAll()['data'] ?? [];
     <?php include __DIR__ . '/../../Components/bottom-nav-admin.php'; ?>
 
     <script src="<?= BASE_URL ?>/View/Assets/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update time display
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('currentTime').textContent = `${hours}:${minutes}`;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
 </body>
 </html>

@@ -78,6 +78,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= t('barn') ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/View/Assets/css/desktop-layout.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -92,16 +93,51 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             padding: 15px 20px;
             font-size: 1.2rem;
             font-weight: bold;
+            display: grid;
+            grid-template-columns: 1fr 50px;
+            align-items: center;
+            gap: 10px;
+        }
+        .top-bar-left {
             display: flex;
             align-items: center;
+            justify-content: flex-start;
         }
-        .top-bar img {
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .top-bar-right img {
             width: 40px;
             height: 40px;
-            margin-right: 15px;
+            object-fit: contain;
         }
         .main-container {
             padding: 20px;
+        }
+        
+        /* Desktop Layout */
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 0;
+            }
+            
+            .top-bar {
+                margin-left: 200px;
+            }
+            
+            .main-container {
+                margin-left: 200px;
+                padding: 30px;
+            }
+            
+            .desktop-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 20px;
+            }
         }
         .barn-card {
             background: linear-gradient(135deg, #6B2C2C 0%, #4A1F1F 100%);
@@ -544,10 +580,18 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../../Components/sidebar-admin.php'; ?>
 
     <div class="top-bar">
-        <img src="<?= BASE_URL ?>/View/Assets/icons/barn.png" alt="Barn Icon">
-        <span><?= strtoupper(t('barn')) ?></span>
+        <div class="top-bar-left">
+            <span><?= strtoupper(t('barn')) ?></span>
+        </div>
+        <div class="top-bar-right">
+            <div class="time-badge">
+                <span id="currentTime"><?= date('H:i') ?></span>
+            </div>
+            <img src="<?= BASE_URL ?>/View/Assets/icons/barn.png" alt="Barn Icon">
+        </div>
     </div>
 
     <div class="main-container">
@@ -558,6 +602,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             </div>
         <?php endif; ?>
 
+        <div class="desktop-grid">
         <?php foreach ($kandangs as $k): 
             $createdDate = date('d/m/Y', strtotime($k['created_at']));
             $species = ucfirst($k['jenis_ayam']);
@@ -587,6 +632,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
             <button type="button" class="remove-button" onclick="confirmDeleteBarn(<?= $k['id_kandang'] ?>, '<?= htmlspecialchars($k['nama_kandang'], ENT_QUOTES) ?>')"><?= t('delete') ?></button>
         </div>
         <?php endforeach; ?>
+        </div>
     </div>
 
     <button class="add-button" onclick="openAddBarnModal()">+</button>
@@ -900,6 +946,18 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
                 closeEditBarnModal();
             }
         });
+    </script>
+    
+    <script>
+        // Update time display
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('currentTime').textContent = `${hours}:${minutes}`;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>

@@ -74,6 +74,59 @@ if ($userId) {
 // Fetch kandangs for input form
 $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 
+// Contribution data for last 7 days
+$contributionData = [];
+$todayContribution = 0;
+$maxTasks = 1;
+
+if ($userId) {
+	// Initialize 7 days array
+	for ($i = 6; $i >= 0; $i--) {
+		$date = date('Y-m-d', strtotime("-$i days"));
+		$dayName = date('D', strtotime("-$i days")); // Mon, Tue, etc
+		$contributionData[$date] = [
+			'date' => $date,
+			'day' => $dayName,
+			'count' => 0
+		];
+	}
+
+	// Query completed tasks for last 7 days
+	$query = "SELECT DATE(created_at) as task_date, COUNT(*) as task_count 
+	          FROM tugas 
+	          WHERE id_user = ? 
+	          AND status = 'selesai' 
+	          AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+	          GROUP BY DATE(created_at)";
+	
+	$stmt = $conn->prepare($query);
+	if ($stmt) {
+		$stmt->bind_param('i', $userId);
+		$stmt->execute();
+		$result = $stmt->get_result();
+		
+		while ($row = $result->fetch_assoc()) {
+			$taskDate = $row['task_date'];
+			$taskCount = intval($row['task_count']);
+			
+			if (isset($contributionData[$taskDate])) {
+				$contributionData[$taskDate]['count'] = $taskCount;
+			}
+		}
+		$stmt->close();
+	}
+	
+	// Calculate max tasks for Y-axis
+	$counts = array_column($contributionData, 'count');
+	$maxTasks = max(array_merge($counts, [1])); // minimum 1 to prevent division by zero
+	
+	// Get today's contribution
+	$today = date('Y-m-d');
+	if (isset($contributionData[$today])) {
+		$todayContribution = $contributionData[$today]['count'];
+	}
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -92,6 +145,13 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 			min-height: 100vh;
 			position: relative;
 		}
+		
+		@media (min-width: 768px) {
+			body {
+				padding-bottom: 20px;
+			}
+		}
+		
 		body::before {
 			content: '';
 			position: fixed;
@@ -237,6 +297,8 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 	</style>
 </head>
 <body>
+	<?php include __DIR__ . '/../../Components/sidebar-staff.php'; ?>
+	
 	<div class="main-container">
 		<!-- Welcome Section -->
 		<div class="welcome-section">
@@ -245,7 +307,7 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 			</div>
 			<div class="welcome-text"><?= t('welcome') ?>, <?= htmlspecialchars($_SESSION['username'] ?? 'Staff') ?>!</div>
 			<div class="contribution-badge">
-				<?= t('your_contribution_on') ?> <?= date('d/m/y') ?>
+				<?= t('your_contribution_on') ?> <?= date('d/m/y') ?>: <?= $todayContribution ?> <?= t('task') ?>
 			</div>
 		</div>
 
@@ -262,25 +324,22 @@ $kandangs = $kandangCtrl->getAll()['data'] ?? [];
 			<!-- Chart -->
 			<div class="chart-wrapper">
 				<div class="y-axis">
-					<div>400</div>
-					<div>300</div>
-					<div>200</div>
-					<div>100</div>
-					<div>50</div>
+					<div><?= $maxTasks ?></div>
+					<div><?= intval($maxTasks * 0.75) ?></div>
+					<div><?= intval($maxTasks * 0.5) ?></div>
+					<div><?= intval($maxTasks * 0.25) ?></div>
+					<div>0</div>
 				</div>
 				<div class="chart-container">
+					<?php foreach ($contributionData as $data): ?>
 					<div class="chart-bar">
-						<div class="bar" style="height: 25%;"></div>
-						<div class="bar-label"><?= t('monday') ?></div>
+						<?php 
+							$barHeight = $maxTasks > 0 ? ($data['count'] / $maxTasks * 100) : 0;
+						?>
+						<div class="bar" style="height: <?= $barHeight ?>%;" title="<?= $data['count'] ?> tasks"></div>
+						<div class="bar-label"><?= $data['day'] ?></div>
 					</div>
-					<div class="chart-bar">
-						<div class="bar" style="height: 45%;"></div>
-						<div class="bar-label"><?= t('tuesday') ?></div>
-					</div>
-					<div class="chart-bar">
-						<div class="bar" style="height: 80%;"></div>
-						<div class="bar-label"><?= t('wednesday') ?></div>
-					</div>
+					<?php endforeach; ?>
 				</div>
 			</div>
 		</div>

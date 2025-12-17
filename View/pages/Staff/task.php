@@ -90,6 +90,13 @@ if ($userId) {
             margin: 0;
             min-height: 100vh;
         }
+        
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 20px;
+            }
+        }
+        
         .top-bar {
             background: linear-gradient(135deg, #FF9F1C 0%, #FF8C00 100%);
             color: white;
@@ -105,6 +112,19 @@ if ($userId) {
         .main-container {
             padding: 20px;
         }
+        
+        @media (min-width: 768px) {
+            .main-container {
+                padding: 30px;
+            }
+            
+            .desktop-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 20px;
+            }
+        }
+        
         .task-card {
             background: linear-gradient(135deg, #6B2C2C 0%, #4A1F1F 100%);
             border-radius: 20px;
@@ -230,29 +250,42 @@ if ($userId) {
         }
         .history-btn {
             position: fixed;
-            bottom: 110px;
-            left: 20px;
-            background: #FF9F1C;
             color: white;
             border: none;
             padding: 12px 24px;
-            border-radius: 25px;
+            border-radius: 30px;
             font-weight: 700;
             cursor: pointer;
             font-size: 0.9rem;
-            box-shadow: 0 4px 12px rgba(255, 159, 28, 0.3);
+            box-shadow: 0 6px 20px rgba(255, 159, 28, 0.4);
             transition: all 0.3s ease;
-            z-index: 1000;
+            z-index: 100;
             font-family: 'Montserrat', sans-serif;
             text-decoration: none;
-            display: inline-block;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            /* Mobile first - sejajar dengan tombol plus tapi di kiri */
+            bottom: 90px;
+            left: 20px;
+            background: linear-gradient(135deg, #FF9F1C 0%, #FF8C00 100%);
         }
         .history-btn:hover {
-            background: #FF8C00;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(255, 159, 28, 0.4);
+            background: linear-gradient(135deg, #FF8C00 0%, #FF7A00 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 159, 28, 0.5);
             color: white;
         }
+        
+        /* Desktop - JANGAN DIUBAH */
+        @media (min-width: 768px) {
+            .history-btn {
+                bottom: 30px;
+                right: 30px;
+                left: auto;
+            }
+        }
+        
         .card-date {
             position: absolute;
             top: 15px;
@@ -271,6 +304,8 @@ if ($userId) {
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../../Components/sidebar-staff.php'; ?>
+    
     <div class="top-bar">
         <?= $showHistory ? t('history') : t('your_job_for') . ' ' . date('d/m/y') ?>
     </div>
@@ -288,6 +323,7 @@ if ($userId) {
                 <p style="text-align: center; margin: 20px 0;"><?= t('no_tasks') ?></p>
             </div>
         <?php else: ?>
+            <div class="desktop-grid">
             <?php foreach ($userTasks as $task): 
                 $isPending = $task['status'] === 'pending';
                 $isCompleted = $task['status'] === 'selesai';
@@ -341,6 +377,7 @@ if ($userId) {
                 </div>
             </div>
             <?php endforeach; ?>
+            </div>
         <?php endif; ?>
     </div>
     

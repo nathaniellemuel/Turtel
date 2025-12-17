@@ -17,6 +17,13 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
         z-index: 1000;
     }
+    
+    /* Hide bottom nav on desktop (tablet and up) */
+    @media (min-width: 768px) {
+        .bottom-nav {
+            display: none !important;
+        }
+    }
     .nav-btn {
         background: none;
         border: none;
