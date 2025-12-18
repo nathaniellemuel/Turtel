@@ -37,7 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if ($action === 'mark_selesai') {
 		$id = intval($_POST['id_tugas'] ?? 0);
 		$res = $tugasCtrl->setStatus($id, 'selesai');
-		$flash = $res['message'] ?? '';
+		$_SESSION['flash'] = $res['message'] ?? '';
+		header('Location: ' . $_SERVER['PHP_SELF']);
+		exit;
 	}
 
 	if ($action === 'input_telur') {
@@ -52,12 +54,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$id_telur = $res['id_telur'] ?? null;
 			if ($id_telur) {
 				$res2 = $kandangCtrl->setTelur($id_kandang, $id_telur);
-				$flash = ($res2['message'] ?? '') . ' | Telur ID: ' . $id_telur;
+				$_SESSION['flash'] = ($res2['message'] ?? '') . ' | Telur ID: ' . $id_telur;
 			}
 		} else {
-			$flash = $res['message'] ?? 'Gagal input telur';
+			$_SESSION['flash'] = $res['message'] ?? 'Gagal input telur';
 		}
+		header('Location: ' . $_SERVER['PHP_SELF']);
+		exit;
 	}
+}
+
+// Get flash message from session
+if (isset($_SESSION['flash'])) {
+	$flash = $_SESSION['flash'];
+	unset($_SESSION['flash']);
 }
 
 // Fetch tugas for this user only
@@ -92,12 +102,13 @@ if ($userId) {
 	}
 
 	// Query completed tasks for last 7 days
+	// Using a more flexible date comparison to catch all completed tasks
 	$query = "SELECT DATE(created_at) as task_date, COUNT(*) as task_count 
 	          FROM tugas 
 	          WHERE id_user = ? 
-	          AND status = 'selesai' 
-	          AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-	          GROUP BY DATE(created_at)";
+	          AND status = 'selesai'
+	          GROUP BY DATE(created_at)
+	          ORDER BY task_date DESC";
 	
 	$stmt = $conn->prepare($query);
 	if ($stmt) {
@@ -109,6 +120,7 @@ if ($userId) {
 			$taskDate = $row['task_date'];
 			$taskCount = intval($row['task_count']);
 			
+			// Only add if it's within our 7-day window
 			if (isset($contributionData[$taskDate])) {
 				$contributionData[$taskDate]['count'] = $taskCount;
 			}
@@ -283,6 +295,20 @@ if ($userId) {
 			border-radius: 10px 10px 0 0;
 			transition: all 0.3s ease;
 			box-shadow: 0 -2px 8px rgba(107, 52, 16, 0.3);
+			min-height: 5px;
+			position: relative;
+		}
+		.bar.has-data {
+			min-height: 30px;
+		}
+		.bar-count {
+			position: absolute;
+			top: -25px;
+			left: 50%;
+			transform: translateX(-50%);
+			font-size: 0.75rem;
+			font-weight: 700;
+			color: #6B3410;
 		}
 		.bar:hover {
 			transform: translateY(-5px);
@@ -334,9 +360,18 @@ if ($userId) {
 					<?php foreach ($contributionData as $data): ?>
 					<div class="chart-bar">
 						<?php 
-							$barHeight = $maxTasks > 0 ? ($data['count'] / $maxTasks * 100) : 0;
+							$count = intval($data['count']);
+							$barHeight = $maxTasks > 0 && $count > 0 ? ($count / $maxTasks * 100) : 0;
+							// Ensure minimum height for visibility
+							if ($barHeight > 0 && $barHeight < 10) {
+								$barHeight = 10;
+							}
 						?>
-						<div class="bar" style="height: <?= $barHeight ?>%;" title="<?= $data['count'] ?> tasks"></div>
+						<div class="bar <?= $count > 0 ? 'has-data' : '' ?>" style="height: <?= $barHeight ?>%;" title="<?= $count ?> tasks">
+							<?php if ($count > 0): ?>
+								<span class="bar-count"><?= $count ?></span>
+							<?php endif; ?>
+						</div>
 						<div class="bar-label"><?= $data['day'] ?></div>
 					</div>
 					<?php endforeach; ?>

@@ -36,42 +36,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $berat = (float)($_POST['berat'] ?? 0);
         $layed_at = $_POST['layed_at'] ?? date('Y-m-d H:i:s');
         
-        // Check if telur already exists for this kandang
-        $checkStmt = $conn->prepare("SELECT id_telur, jumlah_telur, jumlah_buruk, berat FROM telur WHERE id_kandang = ?");
-        $checkStmt->bind_param('i', $id_kandang);
-        $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-        
-        if ($checkResult->num_rows > 0) {
-            // Add to existing telur (increment)
-            $row = $checkResult->fetch_assoc();
-            $id_telur = $row['id_telur'];
-            $new_jumlah_telur = $row['jumlah_telur'] + $jumlah_telur;
-            $new_jumlah_buruk = $row['jumlah_buruk'] + $jumlah_buruk;
-            $new_berat = $row['berat'] + $berat;
-            
-            $stmt = $conn->prepare("UPDATE telur SET jumlah_telur = ?, jumlah_buruk = ?, berat = ?, layed_at = ? WHERE id_telur = ?");
-            $stmt->bind_param('iidsi', $new_jumlah_telur, $new_jumlah_buruk, $new_berat, $layed_at, $id_telur);
-            
-            if ($stmt->execute()) {
-                $_SESSION['flash'] = 'Egg production added successfully!';
-            } else {
-                $_SESSION['flash'] = 'Failed to add egg data: ' . $stmt->error;
-            }
-            $stmt->close();
+        // Validate id_kandang
+        if ($id_kandang <= 0) {
+            $_SESSION['flash'] = 'Please select a barn!';
         } else {
-            // Insert new telur record
-            $stmt = $conn->prepare("INSERT INTO telur (jumlah_telur, jumlah_buruk, berat, layed_at, id_kandang) VALUES (?, ?, ?, ?, ?)");
-            $stmt->bind_param('iidsi', $jumlah_telur, $jumlah_buruk, $berat, $layed_at, $id_kandang);
+            // Verify kandang exists
+            $verifyStmt = $conn->prepare("SELECT id_kandang FROM kandang WHERE id_kandang = ?");
+            $verifyStmt->bind_param('i', $id_kandang);
+            $verifyStmt->execute();
+            $verifyResult = $verifyStmt->get_result();
             
-            if ($stmt->execute()) {
-                $_SESSION['flash'] = 'Egg production added successfully!';
+            if ($verifyResult->num_rows === 0) {
+                $_SESSION['flash'] = 'Invalid barn selected!';
+                $verifyStmt->close();
             } else {
-                $_SESSION['flash'] = 'Failed to add egg data: ' . $stmt->error;
+                $verifyStmt->close();
+                
+                // Insert new telur record as history entry
+                // Each entry is a separate record for tracking history
+                $stmt = $conn->prepare("INSERT INTO telur (jumlah_telur, jumlah_buruk, berat, layed_at, id_kandang) VALUES (?, ?, ?, ?, ?)");
+                $stmt->bind_param('iidsi', $jumlah_telur, $jumlah_buruk, $berat, $layed_at, $id_kandang);
+                
+                if ($stmt->execute()) {
+                    $_SESSION['flash'] = 'Egg production added successfully!';
+                } else {
+                    $_SESSION['flash'] = 'Failed to add egg data: ' . $stmt->error;
+                }
+                $stmt->close();
             }
-            $stmt->close();
         }
-        $checkStmt->close();
         
         // Redirect to prevent form resubmission
         header('Location: ' . $_SERVER['PHP_SELF']);
@@ -143,19 +136,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Get filter parameter
 $showHistory = isset($_GET['history']) && $_GET['history'] === 'true';
 
-// Get all kandang with egg data
+// Get all kandang with egg data aggregated
 if ($showHistory) {
-    // Show all egg data
+    // Show all egg history entries (individual records)
     $query = "SELECT k.*, t.id_telur, t.jumlah_telur, t.jumlah_buruk, t.jumlah_terjual, t.berat, t.layed_at 
               FROM kandang k 
               LEFT JOIN telur t ON k.id_kandang = t.id_kandang 
               ORDER BY t.layed_at DESC, k.nama_kandang";
 } else {
-    // Show only today's egg data
+    // Show today's data with totals aggregated per kandang
     $today = date('Y-m-d');
-    $query = "SELECT k.*, t.id_telur, t.jumlah_telur, t.jumlah_buruk, t.jumlah_terjual, t.berat, t.layed_at 
+    $query = "SELECT k.id_kandang, k.nama_kandang, k.jenis_ayam, k.jumlah_ayam, k.created_at,
+              SUM(t.jumlah_telur) as jumlah_telur, 
+              SUM(t.jumlah_buruk) as jumlah_buruk, 
+              SUM(t.jumlah_terjual) as jumlah_terjual,
+              SUM(t.berat) as berat,
+              MAX(t.layed_at) as layed_at,
+              MAX(t.id_telur) as id_telur
               FROM kandang k 
               LEFT JOIN telur t ON k.id_kandang = t.id_kandang AND DATE(t.layed_at) = '$today'
+              GROUP BY k.id_kandang, k.nama_kandang, k.jenis_ayam, k.jumlah_ayam, k.created_at
               ORDER BY k.nama_kandang";
 }
 
@@ -354,10 +354,88 @@ if ($result) {
             transition: all 0.3s ease;
             z-index: 1000;
         }
+        .fab-ai-btn {
+            position: fixed;
+            bottom: 180px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #F39C12;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.35);
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .fab-ai-btn:hover {
+            transform: scale(1.1);
+            background: #FF8C00;
+            box-shadow: 0 6px 16px rgba(243, 156, 18, 0.45);
+        }
+        .fab-ai-btn svg {
+            width: 26px;
+            height: 26px;
+            fill: currentColor;
+        }
         .fab-btn:hover {
             transform: scale(1.1) rotate(90deg);
             background: #8B3A3A;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .ai-toast {
+            position: fixed;
+            left: 20px;
+            right: 20px;
+            bottom: 170px;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            border-radius: 14px;
+            padding: 14px 16px;
+            display: none;
+            z-index: 1200;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+            backdrop-filter: blur(10px);
+        }
+        .ai-toast.show {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .ai-toast .ai-toast-title {
+            font-weight: 800;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+        .ai-toast .ai-toast-desc {
+            font-weight: 600;
+            font-size: 0.85rem;
+            opacity: 0.85;
+            margin: 2px 0 0 0;
+        }
+        .ai-toast .ai-toast-close {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            line-height: 1;
+            opacity: 0.8;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+        @media (min-width: 768px) {
+            .ai-toast {
+                left: 230px;
+                right: 30px;
+                bottom: 30px;
+                max-width: 520px;
+            }
         }
         .history-btn {
             position: fixed;
@@ -619,7 +697,7 @@ if ($result) {
         ?>
         <div class="egg-card">
             <?php if ($showHistory && $hasEgg): ?>
-            <div class="card-date"><?= date('d M Y', strtotime($kandang['layed_at'])) ?></div>
+            <div class="card-date"><?= date('d M Y H:i', strtotime($kandang['layed_at'])) ?></div>
             <?php endif; ?>
             
             <div class="egg-header">
@@ -653,7 +731,21 @@ if ($result) {
         </div>
     </div>
 
+    <button class="fab-ai-btn" type="button" onclick="openAiDetector()" aria-label="AI Egg Counter">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M20 5h-3.2l-1.3-1.5C15.3 3.2 14.9 3 14.5 3h-5c-.4 0-.8.2-1 .5L7.2 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 14H4V7h3.7c.3 0 .6-.1.8-.4L10 5h4l1.5 1.6c.2.3.5.4.8.4H20v12z"/>
+            <path d="M12 8.2c-2.3 0-4.2 1.9-4.2 4.2s1.9 4.2 4.2 4.2 4.2-1.9 4.2-4.2S14.3 8.2 12 8.2zm0 6.6c-1.3 0-2.4-1.1-2.4-2.4S10.7 10 12 10s2.4 1.1 2.4 2.4-1.1 2.4-2.4 2.4z"/>
+        </svg>
+    </button>
     <button class="fab-btn" onclick="openAddModal()">+</button>
+
+    <div id="aiToast" class="ai-toast" role="status" aria-live="polite">
+        <div>
+            <p class="ai-toast-title">AI Deteksi Telur</p>
+            <p class="ai-toast-desc" id="aiToastText">Jumlah telur terdeteksi: -</p>
+        </div>
+        <button class="ai-toast-close" type="button" aria-label="Close" onclick="hideAiToast()">&times;</button>
+    </div>
     
     <?php if ($showHistory): ?>
     <a href="egg.php" class="history-btn">← <?= t('today') ?></a>
@@ -806,6 +898,53 @@ if ($result) {
     <?php include __DIR__ . '/../../Components/bottom-nav-staff.php'; ?>
 
     <script>
+        function openAiDetector() {
+            window.location.href = 'ai.php?return=egg';
+        }
+
+        function showAiToast(count) {
+            const toast = document.getElementById('aiToast');
+            const text = document.getElementById('aiToastText');
+            if (!toast || !text) return;
+            text.textContent = `Jumlah telur terdeteksi: ${count}`;
+            toast.classList.add('show');
+            window.setTimeout(() => {
+                hideAiToast();
+            }, 6000);
+        }
+
+        function hideAiToast() {
+            const toast = document.getElementById('aiToast');
+            if (!toast) return;
+            toast.classList.remove('show');
+        }
+
+        (function readAiResultFromUrlOrStorage() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const fromUrl = params.get('ai_count');
+                const fromStorage = window.sessionStorage ? sessionStorage.getItem('turtel_ai_egg_count') : null;
+                const raw = fromUrl ?? fromStorage;
+                if (raw !== null && raw !== undefined && raw !== '') {
+                    const count = Number(raw);
+                    if (Number.isFinite(count)) {
+                        showAiToast(count);
+                    }
+                }
+                if (window.sessionStorage) {
+                    sessionStorage.removeItem('turtel_ai_egg_count');
+                }
+                if (fromUrl !== null) {
+                    params.delete('ai_count');
+                    const newQuery = params.toString();
+                    const newUrl = window.location.pathname + (newQuery ? `?${newQuery}` : '');
+                    window.history.replaceState({}, document.title, newUrl);
+                }
+            } catch (_) {
+                // ignore
+            }
+        })();
+
         function openAddModal() {
             document.getElementById('addModal').classList.add('active');
         }

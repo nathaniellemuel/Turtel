@@ -22,8 +22,7 @@ $stokCtrl = new StokController($conn);
 $kandangCtrl = new KandangController($conn);
 $username = $_SESSION['username'] ?? 'Admin';
 
-// Handle form submissions
-$flash = '';
+// Handle form submissions using POST-Redirect-GET pattern to prevent resubmission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
@@ -40,9 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Validation
             if ($currentJumlah <= 0) {
-                $flash = "Stok habis (0). Tidak bisa menambah pakan.";
+                $_SESSION['flash_message'] = "Stok habis (0). Tidak bisa menambah pakan.";
             } elseif ($jumlah > $currentJumlah) {
-                $flash = "Jumlah yang digunakan ($jumlah) melebihi stok tersedia ($currentJumlah)";
+                $_SESSION['flash_message'] = "Jumlah yang digunakan ($jumlah) melebihi stok tersedia ($currentJumlah)";
             } else {
                 // Create pakan
                 $res = $pakanCtrl->create($jumlah, $created, $id_stock);
@@ -50,9 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Reduce stock
                     $newJumlah = $currentJumlah - $jumlah;
                     $stokCtrl->update($id_stock, $stokData['data']['nama_stock'], $stokData['data']['kategori'], $newJumlah);
-                    $flash = "Pakan berhasil ditambahkan. Stok dikurangi otomatis.";
+                    $_SESSION['flash_message'] = "Pakan berhasil ditambahkan. Stok dikurangi otomatis.";
                 } else {
-                    $flash = $res['message'];
+                    $_SESSION['flash_message'] = $res['message'];
                 }
             }
         }
@@ -70,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($checkTask->num_rows > 0) {
             $checkTask->close();
-            $flash = 'Pakan sudah ditugaskan ke pegawai dan tidak bisa diedit';
+            $_SESSION['flash_message'] = 'Pakan sudah ditugaskan ke pegawai dan tidak bisa diedit';
         } else {
             $checkTask->close();
             
@@ -79,9 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($currentPakan['success']) {
                 $id_stock = $currentPakan['data']['id_stock'];
                 $res = $pakanCtrl->update((int)$id, $jumlah, $created, $id_stock);
-                $flash = $res['message'] ?? 'Updated';
+                $_SESSION['flash_message'] = $res['message'] ?? 'Updated';
             } else {
-                $flash = 'Pakan tidak ditemukan';
+                $_SESSION['flash_message'] = 'Pakan tidak ditemukan';
             }
         }
     } elseif ($action === 'delete_pakan') {
@@ -95,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($checkTask->num_rows > 0) {
             $checkTask->close();
-            $flash = 'Pakan sudah ditugaskan ke pegawai dan tidak bisa dihapus';
+            $_SESSION['flash_message'] = 'Pakan sudah ditugaskan ke pegawai dan tidak bisa dihapus';
         } else {
             $checkTask->close();
             
@@ -115,15 +114,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Delete pakan
                     $res = $pakanCtrl->delete((int)$id);
-                    $flash = 'Pakan dihapus dan stok dikembalikan';
+                    $_SESSION['flash_message'] = 'Pakan dihapus dan stok dikembalikan';
                 } else {
-                    $flash = 'Gagal mengupdate stok';
+                    $_SESSION['flash_message'] = 'Gagal mengupdate stok';
                 }
             } else {
-                $flash = 'Pakan tidak ditemukan';
+                $_SESSION['flash_message'] = 'Pakan tidak ditemukan';
             }
         }
     }
+    
+    // Redirect to same page to prevent POST resubmission on refresh
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+// Get flash message from session and clear it
+$flash = '';
+if (isset($_SESSION['flash_message'])) {
+    $flash = $_SESSION['flash_message'];
+    unset($_SESSION['flash_message']);
 }
 
 // Get all pakan with task status check

@@ -18,8 +18,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 $stokCtrl = new StokController($conn);
 $username = $_SESSION['username'] ?? 'Admin';
 
-// Handle form submissions
-$flash = '';
+// Handle form submissions using POST-Redirect-GET pattern to prevent resubmission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
@@ -29,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $jumlah = (int)($_POST['jumlah'] ?? 0);
         
         $res = $stokCtrl->create($kategori, $nama_stock, $jumlah);
-        $flash = $res['message'] ?? 'Stock added';
+        $_SESSION['flash_message'] = $res['message'] ?? 'Stock added';
     } elseif ($action === 'edit_stock') {
         $id = (int)($_POST['id_stock'] ?? 0);
         $kategori = $_POST['kategori'] ?? '';
@@ -37,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $jumlah = (int)($_POST['jumlah'] ?? 0);
         
         $res = $stokCtrl->update($id, $nama_stock, $kategori, $jumlah);
-        $flash = $res['message'] ?? 'Stock updated';
+        $_SESSION['flash_message'] = $res['message'] ?? 'Stock updated';
     } elseif ($action === 'refill_stock') {
         $id = (int)($_POST['id_stock'] ?? 0);
         $refill_amount = (int)($_POST['refill_amount'] ?? 0);
@@ -49,15 +48,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $newJumlah = $currentJumlah + $refill_amount;
             
             $res = $stokCtrl->updateJumlah($id, $newJumlah);
-            $flash = "Stock refilled successfully! Added {$refill_amount}kg";
+            $_SESSION['flash_message'] = "Stock refilled successfully! Added {$refill_amount}kg";
         } else {
-            $flash = 'Stock not found';
+            $_SESSION['flash_message'] = 'Stock not found';
         }
     } elseif ($action === 'delete_stock') {
         $id = (int)($_POST['id_stock'] ?? 0);
         $res = $stokCtrl->delete($id);
-        $flash = $res['message'] ?? 'Stock deleted';
+        $_SESSION['flash_message'] = $res['message'] ?? 'Stock deleted';
     }
+    
+    // Redirect to same page to prevent POST resubmission on refresh
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+// Get flash message from session and clear it
+$flash = '';
+if (isset($_SESSION['flash_message'])) {
+    $flash = $_SESSION['flash_message'];
+    unset($_SESSION['flash_message']);
 }
 
 // Get all stocks with used amount from pakan
